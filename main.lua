@@ -115,8 +115,6 @@ function love.load()
         :add(components.position, 0, 0)
         :add(geometry_draw_component)
 
-    print(get_atlas("art/characters"):get_animation("smoke"))
-
 end
 
 function love.update(dt)
