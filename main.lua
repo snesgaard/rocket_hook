@@ -28,6 +28,12 @@ function geometry_draw_system:draw()
     end
 end
 
+local player_draw_system = ecs.system(components.sprite, components.player_control)
+
+function player_draw_system:draw()
+    List.foreach(self.pool, systems.sprite.draw)
+end
+
 function love.load()
     systems.collision:show()
     world = ecs.world(
@@ -35,7 +41,7 @@ function love.load()
         pause_system,
         systems.player_input,
         systems.animation,
-        systems.sprite,
+        player_draw_system,
         systems.ground_monitor,
         systems.dodge,
         systems.hook,
@@ -67,7 +73,7 @@ function love.load()
             components.animation_map,
             get_atlas("art/characters"),
             {
-                idle="gibbles_reference_palette",
+                idle="gibbles_idle/animation",
                 hook_h_fire="gibbles_hook/h_fire",
                 hook_h_drag="gibbles_hook/h_drag",
                 hook_v_fire="gibbles_hook/v_fire",
@@ -109,6 +115,8 @@ function love.load()
         :add(components.position, 0, 0)
         :add(geometry_draw_component)
 
+    print(get_atlas("art/characters"):get_animation("smoke"))
+
 end
 
 function love.update(dt)
@@ -121,7 +129,7 @@ function love.keypressed(key, scancode, isrepeat)
 end
 
 function love.draw()
-    gfx.translate(gfx.getWidth() * 0.5, gfx.getHeight() * 0.5)
+    gfx.translate(gfx.getWidth() * 0.5, gfx.getHeight() * 0.65)
     gfx.scale(2, 2)
     gfx.translate((-mc[components.position]):unpack())
     --bump_debug.draw_world(bump_world)

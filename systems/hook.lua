@@ -46,6 +46,26 @@ local function chain_from_direction(dir)
     end
 end
 
+local function smoke_from_direction(dir)
+    if dir.x ~= 0 and dir.y ~= 0 then
+        return "smoke_hv"
+    elseif dir.y ~= 0 then
+        return "smoke_v"
+    else
+        return "smoke_h"
+    end
+end
+
+local function jet_from_direction(dir)
+    if dir.x ~= 0 and dir.y ~= 0 then
+        return "jet_hv"
+    elseif dir.y ~= 0 then
+        return "jet_v"
+    else
+        return "jet_h"
+    end
+end
+
 local function direction_component(dir) return dir:normalize() end
 
 local function hook_tween_component()
@@ -81,13 +101,35 @@ local function hook_component(parent, dir)
         :add(components.hitbox, -5, -5, 10, 10)
 end
 
+local function smoke_component() return true end
+
+local function jet_component(world, dir, mirror)
+    local jet = ecs.entity(world)
+        :add(components.sprite, {[components.draw_args] = {0, 0, 0, 1, 1}})
+        :add(components.animation_state)
+        :add(
+            components.animation_map,
+            get_atlas("art/characters"),
+            {
+                jet_v="rocket_jet_ball/jet_v_huge",
+                jet_h="rocket_jet_ball/jet_h_huge",
+                jet_hv="rocket_jet_ball/jet_hv_huge",
+            }
+        )
+        :add(components.mirror, mirror)
+
+    systems.animation.play(jet, jet_from_direction(dir))
+
+    return jet
+end
 
 local system = ecs.system.from_function(
     function(entity)
         return {
             candidates = entity:has(components.bump_world, components.position),
             hook_travel = entity:has(hook_component) and not entity:has(drag_tween_component),
-            player_drag = entity:has(hook_component) and entity:has(drag_tween_component)
+            player_drag = entity:has(hook_component) and entity:has(drag_tween_component),
+            smoke = entity:has(smoke_component)
         }
     end
 )
@@ -105,11 +147,36 @@ function system:throw_hook(entity, dir)
         :remove(components.gravity)
 end
 
+
+local function create_smoke_puff(world, x, y)
+    return ecs.entity(world)
+        :add(components.sprite)
+        :add(components.animation_state)
+        :add(
+            components.animation_map,
+            get_atlas("art/characters"),
+            {
+                smoke_v="smoke/smoke_v",
+                smoke_h="smoke/smoke_h",
+                smoke_hv="smoke/smoke_hv"
+            }
+        )
+        :add(components.position, x or 0, y or 0)
+        :add(smoke_component)
+end
+
 function system:on_entity_added(entity, pool)
     if pool == self.hook_travel then
         local dir = entity[hook_component][direction_component]
         local animation_key = hook_animation_from_direction(dir)
+        local slice = systems.animation.get_transformed_slice(
+            entity, "hook", "body", animation_key
+        )
         systems.animation.play(entity, animation_key)
+
+        local smoke = create_smoke_puff(entity.world, slice:center():unpack())
+        smoke:add(components.mirror, entity[components.mirror])
+        systems.animation.play(smoke, smoke_from_direction(dir), true)
     elseif pool == self.player_drag then
         local dir = entity[hook_component][direction_component]
         local animation_key = drag_animation_from_direction(dir)
@@ -117,8 +184,18 @@ function system:on_entity_added(entity, pool)
     end
 end
 
+function system:on_animation_ended(entity)
+    if not self.smoke[entity] then return end
+
+    entity:destroy()
+end
+
 function system:on_entity_removed(entity, pool, component, prev_value)
-    if component == hook_component then prev_value:destroy() end
+    if component == hook_component then
+        local jet = prev_value[jet_component]
+        if jet then jet:destroy() end
+        prev_value:destroy()
+    end
 end
 
 function system:player_action(action, entity)
@@ -147,6 +224,7 @@ function system:update(dt)
 
         if did_we_collide() or tween:is_done() then
             entity:add(drag_tween_component, tween:value())
+            hook:add(jet_component, entity.world, dir, entity[components.mirror])
         end
     end)
 
@@ -247,6 +325,7 @@ local function draw_chain_hv(start_pos, end_pos)
     gfx.setStencilTest()
 end
 
+
 function system:draw()
     local function draw_rocket(entity)
         local hook = entity[hook_component]
@@ -276,13 +355,22 @@ function system:draw()
 
     end
 
+    local function draw_jet(entity)
+        local hook = entity[hook_component]
+        local x, y = hook[components.position]:unpack()
+        systems.sprite.draw(hook[jet_component], x, y)
+    end
+
     local function draw_rocket_and_chain(entity)
         draw_chain(entity)
+        draw_jet(entity)
         draw_rocket(entity)
     end
 
     List.foreach(self.hook_travel, draw_rocket_and_chain)
     List.foreach(self.player_drag, draw_rocket_and_chain)
+
+    List.foreach(self.smoke, systems.sprite.draw)
 end
 
 return system

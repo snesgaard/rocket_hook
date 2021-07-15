@@ -43,5 +43,4 @@ function system:player_action(action, entity, ...)
     end
 end
 
-
 return system
