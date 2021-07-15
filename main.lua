@@ -85,6 +85,7 @@ function love.load()
                 run="gibbles_run"
             }
         )
+        :add(components.action, "idle")
         --:add(components.hook_point, 10, -10)
 
     ecs.entity(world)
