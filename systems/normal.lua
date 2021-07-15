@@ -5,13 +5,15 @@ local system = ecs.system.from_function(
             pool = entity:has(
                 components.position, components.player_control,
                 components.velocity, components.action
-            ) and entity[components.action]:type() == "idle",
+            ),
         }
     end
 )
 
 function system:player_action(action, entity, ...)
     if not self.pool[entity] then return end
+
+    if not entity[components.action]:type() == "idle" then return end
 
     if action == "move" then
         local v = entity[components.velocity]
@@ -38,10 +40,9 @@ function system:player_action(action, entity, ...)
         end
 
     elseif action == "hook" then
-        --self.world("throw_hook", entity, ...)
         entity:update(components.action, "hook", ...)
     elseif action == "jump" then
-        self.world("do_jump", entity, ...)
+        entity:update(components.action, "jump", ...)
     end
 end
 

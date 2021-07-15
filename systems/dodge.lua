@@ -12,20 +12,32 @@ local function dodge_component(pos, dir)
         :add(player_travel_tween, pos, dir)
 end
 
-local dodge_system = ecs.system(
-    components.player_control, dodge_component, components.position
-)
+local function entity_filter(entity)
+    return {
+        pool=entity:has(components.position, components.action)
+            and entity[components.action]:type() == "jump"
+    }
+end
 
-function dodge_system:do_jump(entity, dir)
+local dodge_system = ecs.system.from_function(entity_filter)
+
+function dodge_system:on_entity_added(entity)
+    local dir = entity[components.action]:args()
     entity
         :add(dodge_component, entity[components.position], dir)
         :remove(components.velocity)
-        :remove(components.gravity)
+
+    systems.animation.play(entity, "ascend")
+end
+
+function dodge_system:on_entity_removed(entity)
+    entity
+        :remove(dodge_component)
+        :ensure(components.velocity)
 end
 
 function dodge_system:update(dt)
     List.foreach(self.pool, function(entity)
-        systems.animation.play(entity, "ascend")
         local travel_tween = entity[dodge_component][player_travel_tween]
         if not travel_tween:is_done() then
             local next_position = travel_tween:update(dt)
@@ -35,9 +47,9 @@ function dodge_system:update(dt)
 
         local velocity = travel_tween:derivative(travel_tween:get_duration())
         entity
-            :remove(dodge_component)
             :add(components.velocity, velocity:unpack())
-            :add(components.gravity, 0, 1000)
+            :add(components.action, "idle")
+
     end)
 end
 
