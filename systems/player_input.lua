@@ -1,11 +1,28 @@
-local function broadcast_action(self, action, ...)
-    for _, entity in ipairs(self.pool) do
-        self.world("player_action", action, entity, ...)
+local function reflect_input_map(map)
+    local reflection = {}
+
+    for key, value in pairs(map) do
+        local l = reflection[value] or {}
+        table.insert(l, key)
+        reflection[value] = l
     end
+
+    return reflection
 end
 
+local input_from_key = {
+    lshift = "hook",
+    space = "jump",
+    left = "left",
+    right = "right",
+    up = "up",
+    down = "down"
+}
+local keys_from_input = reflect_input_map(input_from_key)
 
-local player_input = ecs.system(components.player_control)
+
+
+local player_input = ecs.system()
 
 local function get_direction()
     local dir = vec2()
@@ -26,21 +43,30 @@ local function get_direction()
     return dir
 end
 
+function player_input:keypressed(key)
+    local input = input_from_key[key]
 
-function player_input:update(dt)
-    local dir = get_direction()
-
-    dir = dir:normalize() * dt
-
-    broadcast_action(self, "move", dir)
+    if input then
+        self.world("input_pressed", input)
+    end
 end
 
-function player_input:keypressed(key)
-    if key == "lshift" then
-        broadcast_action(self, "hook", get_direction())
-    elseif key == "space" then
-        broadcast_action(self, "jump", get_direction():normalize())
+function player_input:keyreleased(key)
+    local input = input_from_key[key]
+
+    if input then
+        self.world("input_released", input)
     end
+end
+
+function player_input.is_down(input)
+    local is_down = false
+
+    for _, key in ipairs(keys_from_input[input] or {}) do
+        is_down = is_down or love.keyboard.isDown(key)
+    end
+
+    return is_down
 end
 
 return player_input
