@@ -55,7 +55,7 @@ function system.init_hook(entity)
 
     -- Initialize animation
     local animation_key = constants.hook_animation_from_direction(dir)
-    local slice = systems.animation.get_transformed_slice(
+    local slice = systems.animation.get_slice(
         entity, "hook", "body", animation_key
     )
     systems.animation.play(entity, animation_key)
