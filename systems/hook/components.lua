@@ -27,7 +27,7 @@ function hook_components.hook(parent, dir)
     local entity = ecs.entity(parent.world)
 
     local animation_key = constants.hook_animation_from_direction(dir)
-    local offset_slice = systems.animation.get_slice(
+    local offset_slice = systems.animation.get_base_slice(
         parent, "hook", "body", animation_key
     ) or spatial()
     if dir.x < 0 or entity[components.mirror] then offset_slice = offset_slice:hmirror() end

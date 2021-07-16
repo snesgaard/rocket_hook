@@ -131,7 +131,7 @@ function love.draw()
     gfx.translate(gfx.getWidth() * 0.5, gfx.getHeight() * 0.65)
     gfx.scale(2, 2)
     gfx.translate((-mc[components.position]):unpack())
-    --bump_debug.draw_world(bump_world)
+    bump_debug.draw_world(bump_world)
     --bump_debug.draw_coordinate_systems(world:entities())
     world("draw")
 end
