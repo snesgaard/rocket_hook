@@ -1,21 +1,23 @@
 local travel_time = 0.2
 local travel_distance = 50
 
-local function player_travel_tween(pos, dir)
-    local d = dir.x > 0 and vec2(1, -1) or vec2(-1, -1)
+local function player_travel_tween(pos, dir, mirror)
+    local d = vec2(1, -1)
+    if dir.x < 0 or mirror then d = vec2(-1, -1) end
+    
     return components.tween(pos:copy(), pos + d * travel_distance, travel_time)
         --:ease(ease.outQuad)
 end
 
-local function dodge_component(pos, dir)
+local function dodge_component(pos, dir, mirror)
     return ecs.entity()
-        :add(player_travel_tween, pos, dir)
+        :add(player_travel_tween, pos, dir, mirror)
 end
 
 local function entity_filter(entity)
     return {
-        pool=entity:has(components.position, components.action)
-            and entity[components.action]:type() == "jump"
+        pool = entity:has(components.position, components.action)
+                and entity[components.action]:type() == "jump"
     }
 end
 
@@ -23,8 +25,10 @@ local dodge_system = ecs.system.from_function(entity_filter)
 
 function dodge_system:on_entity_added(entity)
     local dir = entity[components.action]:args()
+    local mirror = entity[components.mirror]
+
     entity
-        :add(dodge_component, entity[components.position], dir)
+        :add(dodge_component, entity[components.position], dir, mirror)
         :remove(components.velocity)
 
     systems.animation.play(entity, "ascend")
