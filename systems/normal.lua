@@ -1,35 +1,73 @@
+local system = ecs.system(components.player_control, components.action)
 
-local system = ecs.system.from_function(
-    function(entity)
-        return {
-            pool = entity:has(
-                components.position, components.player_control,
-                components.velocity, components.action
-            ),
-        }
+
+local function get_input_direction()
+    local dir_from_input = {
+        up = vec2(0, -1),
+        down = vec2(0, 1),
+        left = vec2(-1, 0),
+        right = vec2(1, 0)
+    }
+
+    local dir = vec2()
+
+    for input, d in pairs(dir_from_input) do
+        if systems.player_input.is_down(input) then
+            dir = dir + d
+        end
     end
-)
 
-function system:player_action(action, entity, ...)
-    if not self.pool[entity] then return end
+    return dir
+end
 
-    if not entity[components.action]:type() == "idle" then return end
 
-    if action == "move" then
-        local v = entity[components.velocity]
+local input_pressed_handlers = {}
+
+
+function input_pressed_handlers.idle(entity, input)
+    if input == "hook" then
+        entity:update(components.action, "hook", get_input_direction())
+    elseif input == "jump" then
+        entity:update(components.action, "jump", get_input_direction())
+    end
+end
+
+
+function system:input_pressed(input)
+    for _, entity in ipairs(self.pool) do
+        local action = entity[components.action]:type()
+        local f = input_pressed_handlers[action]
+        if f then f(entity, input) end
+    end
+end
+
+
+function system:input_released(key)
+end
+
+
+function system:update(dt)
+    List.foreach(self.pool, function(entity)
+        if entity[components.action]:type() ~= "idle" then return end
+
+        local v = entity:ensure(components.velocity)
+
+
         if systems.ground_monitor.is_on_ground(entity) then
-            local velocity = 200
-            local dir = ...
-            dir.y = dir.y * 0
-            self.world:action("move", entity, (dir * velocity):unpack())
+            local dir = get_input_direction()
+            local speed = 200 * dir.x
+            entity:update(components.velocity, speed, v.y)
+
             if dir.x < 0 then
-                entity:add(components.mirror, true)
-                systems.animation.play(entity, "run")
+                entity:update(components.mirror, true)
             elseif dir.x > 0 then
-                entity:add(components.mirror, false)
-                systems.animation.play(entity, "run")
-            else
+                entity:update(components.mirror, false)
+            end
+
+            if speed == 0 then
                 systems.animation.play(entity, "idle")
+            else
+                systems.animation.play(entity, "run")
             end
         else
             if v.y < 0 then
@@ -38,12 +76,8 @@ function system:player_action(action, entity, ...)
                 systems.animation.play(entity, "descend")
             end
         end
-
-    elseif action == "hook" then
-        entity:update(components.action, "hook", ...)
-    elseif action == "jump" then
-        entity:update(components.action, "jump", ...)
-    end
+    end)
 end
+
 
 return system
