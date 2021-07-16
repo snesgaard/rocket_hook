@@ -4,9 +4,8 @@ local travel_distance = 50
 local function player_travel_tween(pos, dir, mirror)
     local d = vec2(1, -1)
     if dir.x < 0 or mirror then d = vec2(-1, -1) end
-    
+
     return components.tween(pos:copy(), pos + d * travel_distance, travel_time)
-        --:ease(ease.outQuad)
 end
 
 local function dodge_component(pos, dir, mirror)
