@@ -77,7 +77,7 @@ function system.update_hook(self, entity, dt)
     local init_pos = hook[hook_components.initial_position]
     local o = hook[hook_components.hook_offset]
     local next_pos = init_pos + d * dir + o
-    local x, y, cols = self.world:action("move_to", hook, next_pos:unpack())
+    local x, y, cols = systems.collision.move_to(hook, next_pos:unpack())
 
     local function did_we_collide()
         for _, c in ipairs(cols) do
@@ -114,7 +114,7 @@ function system.update_drag(self, entity, dt)
     local d = tween:update(dt)
     local next_pos = init_pos + dir * d
 
-    self.world:action("move_to", entity, next_pos:unpack())
+    systems.collision.move_to(entity, next_pos:unpack())
 
     if tween:is_done() then
         local velocity = tween:derivative(tween:get_duration()) * dir

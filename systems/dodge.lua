@@ -44,7 +44,7 @@ function dodge_system:update(dt)
         local travel_tween = entity[dodge_component][player_travel_tween]
         if not travel_tween:is_done() then
             local next_position = travel_tween:update(dt)
-            self.world:action("move_to", entity, next_position:unpack())
+            systems.collision.move_to(entity, next_position:unpack())
             return
         end
 
