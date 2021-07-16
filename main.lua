@@ -53,7 +53,7 @@ function love.load()
 
     local frame = get_atlas("art/characters"):get_frame("gibbles_reference")
     mc = ecs.entity(world)
-        :add(components.hitbox, -5, -60, 10, 60)
+        :add(components.hitbox, -5, -30, 10, 60)
         :add(components.body)
         :add(components.bump_world, bump_world)
         :add(components.position, 200, 200)

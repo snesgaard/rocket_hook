@@ -30,7 +30,6 @@ function hook_components.hook(parent, dir)
     local offset_slice = systems.animation.get_base_slice(
         parent, "hook", "body", animation_key
     ) or spatial()
-    if dir.x < 0 or entity[components.mirror] then offset_slice = offset_slice:hmirror() end
 
     return entity
         :add(hook_components.direction, dir)
