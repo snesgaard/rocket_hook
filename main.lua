@@ -1,6 +1,6 @@
 require "nodeworks"
 require "components"
-require "systems"
+local system_import = require "systems"
 
 assemblages = require "assemblages"
 
@@ -44,8 +44,11 @@ function love.load()
         player_draw_system,
         systems.ground_monitor,
         systems.dodge,
+        --systems.throw,
+        system_import("throw"),
         systems.hook,
         systems.normal,
+        systems.root_motion,
         systems.motion,
         systems.collision
     )
@@ -82,10 +85,12 @@ function love.load()
                 hook_hv_drag="gibbles_hook/hv_drag",
                 descend="gibbles_arial/descend",
                 ascend="gibbles_arial/ascend",
-                run="gibbles_run"
+                run="gibbles_run",
+                throw="gibbles_throw/throw"
             }
         )
         :add(components.action, "idle")
+        :add(components.root_motion)
         --:add(components.hook_point, 10, -10)
 
     ecs.entity(world)
@@ -131,7 +136,7 @@ function love.draw()
     gfx.translate(gfx.getWidth() * 0.5, gfx.getHeight() * 0.65)
     gfx.scale(2, 2)
     gfx.translate((-mc[components.position]):unpack())
-    bump_debug.draw_world(bump_world)
+    --bump_debug.draw_world(bump_world)
     --bump_debug.draw_coordinate_systems(world:entities())
     world("draw")
 end

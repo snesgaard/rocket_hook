@@ -16,7 +16,8 @@ local input_from_key = {
     left = "left",
     right = "right",
     up = "up",
-    down = "down"
+    down = "down",
+    a = "throw"
 }
 local keys_from_input = reflect_input_map(input_from_key)
 

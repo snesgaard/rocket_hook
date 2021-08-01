@@ -1,3 +1,5 @@
+local throw = require "systems.throw"
+
 local system = ecs.system(components.player_control, components.action)
 
 
@@ -29,6 +31,9 @@ function input_pressed_handlers.idle(entity, input)
         entity:update(components.action, "hook", get_input_direction())
     elseif input == "jump" then
         entity:update(components.action, "jump", get_input_direction())
+    elseif input == "throw" then
+        --entity:update(components.action, "throw", get_input_direction())
+        throw.throw(entity, get_input_direction())
     end
 end
 
