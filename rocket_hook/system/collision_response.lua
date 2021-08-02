@@ -1,8 +1,10 @@
+local rh = require "rocket_hook"
+
 local function on_ground_timer()
     return components.timer.create(0.2)
 end
 
-local ground_monitor = ecs.system(components.player_control)
+local ground_monitor = ecs.system(rh.component.player_control)
 
 function ground_monitor:on_collision(collisions)
     List.foreach(collisions, function(info)

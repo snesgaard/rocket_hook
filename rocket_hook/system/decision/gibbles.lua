@@ -1,6 +1,6 @@
-local throw = require "systems.throw"
+local rh = require "rocket_hook"
 
-local system = ecs.system(components.player_control, components.action)
+local system = ecs.system(rh.component.player_control, components.action)
 
 
 local function get_input_direction()
@@ -14,7 +14,7 @@ local function get_input_direction()
     local dir = vec2()
 
     for input, d in pairs(dir_from_input) do
-        if systems.player_input.is_down(input) then
+        if rh.system.input_remap.is_down(input) then
             dir = dir + d
         end
     end
@@ -32,8 +32,7 @@ function input_pressed_handlers.idle(entity, input)
     elseif input == "jump" then
         entity:update(components.action, "jump", get_input_direction())
     elseif input == "throw" then
-        --entity:update(components.action, "throw", get_input_direction())
-        throw.throw(entity, get_input_direction())
+        rh.system.action.throw.throw(entity, get_input_direction())
     end
 end
 
@@ -58,7 +57,7 @@ function system:update(dt)
         local v = entity:ensure(components.velocity)
 
 
-        if systems.ground_monitor.is_on_ground(entity) then
+        if rh.system.collision_response.is_on_ground(entity) then
             local dir = get_input_direction()
             local speed = 200 * dir.x
             entity:update(components.velocity, speed, v.y)

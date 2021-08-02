@@ -1,3 +1,5 @@
+local components = {}
+
 function components.hook(x0, y0, x1, y1)
     return {
         radius=vec2(x0 - x1, y0 - y1):length(),
@@ -16,3 +18,9 @@ end
 function components.player_control(state)
     return state or "normal"
 end
+
+local BASE = ...
+
+function components.__index(t, k) return require(BASE .. "." .. k) end
+
+return setmetatable(components, components)

@@ -1,8 +1,9 @@
 require "nodeworks"
-require "components"
-local system_import = require "systems"
+--require "components"
+--local system_import = require "systems"
+--assemblages = require "assemblages"
 
-assemblages = require "assemblages"
+local rh = require("rocket_hook")
 
 local pause_system = ecs.system()
 
@@ -39,15 +40,14 @@ function love.load()
     world = ecs.world(
         geometry_draw_system,
         pause_system,
-        systems.player_input,
+        rh.system.input_remap,
         systems.animation,
         player_draw_system,
-        systems.ground_monitor,
-        systems.dodge,
-        --systems.throw,
-        system_import("throw"),
-        systems.hook,
-        systems.normal,
+        rh.system.collision_response,
+        rh.system.action.dodge,
+        rh.system.action.throw,
+        rh.system.action.hook,
+        rh.system.decision.gibbles,
         systems.root_motion,
         systems.motion,
         systems.collision
@@ -60,8 +60,8 @@ function love.load()
         :add(components.body)
         :add(components.bump_world, bump_world)
         :add(components.position, 200, 200)
-        :add(components.player_control)
-        :assemble(assemblages.player_motion)
+        :add(rh.component.player_control)
+        :assemble(rh.assemblage.player_motion)
         :add(
             components.sprite,
             {
