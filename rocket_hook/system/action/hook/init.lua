@@ -12,6 +12,13 @@ local system = ecs.system.from_function(
     end
 )
 
+function system.hook(entity, dir)
+    if dir:length() < 1e-10 then
+        dir = vec2(entity[components.mirror] and -1 or 1, 0)
+    end
+    entity:update(components.action, "hook", dir)
+end
+
 function system:on_entity_added(entity, pool)
     if pool == self.entities then
         -- Deactivate velocity as we want to dictate how it goes

@@ -22,6 +22,10 @@ end
 
 local dodge_system = ecs.system.from_function(entity_filter)
 
+function dodge_system.dodge(entity, dir)
+    entity:update(components.action, "jump", dir)
+end
+
 function dodge_system:on_entity_added(entity)
     local dir = entity[components.action]:args()
     local mirror = entity[components.mirror]

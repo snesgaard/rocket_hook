@@ -28,9 +28,10 @@ local input_pressed_handlers = {}
 
 function input_pressed_handlers.idle(entity, input)
     if input == "hook" then
-        entity:update(components.action, "hook", get_input_direction())
+        --entity:update(components.action, "hook", get_input_direction())
+        rh.system.action.hook.hook(entity, get_input_direction())
     elseif input == "jump" then
-        entity:update(components.action, "jump", get_input_direction())
+        rh.system.action.dodge.dodge(entity, get_input_direction())
     elseif input == "throw" then
         rh.system.action.throw.throw(entity, get_input_direction())
     end

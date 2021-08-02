@@ -29,7 +29,7 @@ function geometry_draw_system:draw()
     end
 end
 
-local player_draw_system = ecs.system(components.sprite, components.player_control)
+local player_draw_system = ecs.system(components.sprite, rh.component.player_control)
 
 function player_draw_system:draw()
     List.foreach(self.pool, systems.sprite.draw)
