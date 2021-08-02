@@ -1,4 +1,4 @@
-require "nodeworks"
+local nw = require "nodeworks"
 --require "components"
 --local system_import = require "systems"
 --assemblages = require "assemblages"
@@ -35,23 +35,35 @@ function player_draw_system:draw()
     List.foreach(self.pool, systems.sprite.draw)
 end
 
+local render_systems = list(geometry_draw_system, player_draw_system)
+local input_systems = list(pause_system, rh.system.input_remap)
+local player_action_systems = list(
+    rh.system.action.dodge,
+    rh.system.action.throw,
+    rh.system.action.hook
+)
+local decision_systems = list(rh.system.decision.gibbles)
+local physics_systems = list(
+    rh.system.collision_response,
+    nw.system.motion,
+    nw.system.collision
+)
+local animation_systems = list(
+    nw.system.animation,
+    nw.system.root_motion
+)
+local all_systems =
+    input_systems
+    + animation_systems
+    + render_systems
+    + decision_systems
+    + player_action_systems
+    + physics_systems
+
 function love.load()
     systems.collision:show()
-    world = ecs.world(
-        geometry_draw_system,
-        pause_system,
-        rh.system.input_remap,
-        systems.animation,
-        player_draw_system,
-        rh.system.collision_response,
-        rh.system.action.dodge,
-        rh.system.action.throw,
-        rh.system.action.hook,
-        rh.system.decision.gibbles,
-        systems.root_motion,
-        systems.motion,
-        systems.collision
-    )
+    world = ecs.world(all_systems)
+
     bump_world = bump.newWorld()
 
     local frame = get_atlas("art/characters"):get_frame("gibbles_reference")
