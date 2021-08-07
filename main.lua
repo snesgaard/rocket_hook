@@ -64,6 +64,21 @@ function love.load()
     systems.collision:show()
     world = ecs.world(all_systems)
 
+    --[[
+    world.on_event_invoked = function(event, ...)
+        local blacklist = list("update", "draw", "on_collision")
+        if blacklist:argfind(event) then return end
+
+        print("event!", event, ...)
+    end
+    world.on_component_updated = function(entity, component, prev_value, value)
+        if entity ~= mc then return end
+
+        if (component ~= components.action) then return end
+        print("action!", prev_value:type(), value:type())
+    end
+    ]]--
+
     bump_world = bump.newWorld()
 
     local frame = get_atlas("art/characters"):get_frame("gibbles_reference")

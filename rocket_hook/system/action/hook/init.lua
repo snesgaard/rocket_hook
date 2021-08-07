@@ -70,7 +70,10 @@ function system.init_hook(entity)
     -- Create the smoke puff visuals
     local smoke = visuals.create_smoke_puff(entity.world, slice:center():unpack())
     smoke:add(components.mirror, entity[components.mirror])
-    systems.animation.play(smoke, constants.smoke_from_direction(dir), true)
+    systems.animation.play(
+        smoke, constants.smoke_from_direction(dir),
+        {once=true, interrupt=true}
+    )
 end
 
 function system.update_hook(self, entity, dt)

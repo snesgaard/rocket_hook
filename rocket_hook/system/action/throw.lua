@@ -26,7 +26,7 @@ function system:on_entity_added(entity, pool)
         entity:update(components.mirror, true)
     end
 
-    systems.animation.play(entity, "throw", true)
+    systems.animation.play(entity, "throw", {interrupt=true, once=true})
 end
 
 function system:on_entity_removed(entity)
