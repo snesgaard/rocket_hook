@@ -12,6 +12,11 @@ function ground_monitor:on_collision(collisions)
         if info.normal.y > -0.9 then return end
         info.item:add(on_ground_timer)
     end)
+
+    List.foreach(collisions, function(info)
+        if info.item[rh.component.brittle] then info.item:destroy() end
+        if info.other[rh.component.brittle] then info.other:destroy() end
+    end)
 end
 
 function ground_monitor.is_on_ground(entity)

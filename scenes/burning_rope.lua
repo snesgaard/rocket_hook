@@ -1,5 +1,6 @@
 local br = require "burning_rope"
 local nw = require "nodeworks"
+local rh = require "rocket_hook"
 
 local scene = {}
 
@@ -16,6 +17,12 @@ function pause_system:keypressed(key)
     end
 end
 
+local player_draw_system = ecs.system(nw.component.sprite, rh.component.player_control)
+
+function player_draw_system:draw()
+    List.foreach(self.pool, systems.sprite.draw)
+end
+
 local logic_systems = list(
     pause_system,
     br.system.burn,
@@ -23,19 +30,35 @@ local logic_systems = list(
     nw.system.parenting
 )
 
+local action_systems = list(
+    rh.system.input_remap,
+    rh.system.action.dodge,
+    rh.system.action.throw,
+    rh.system.action.hook
+)
+
+local decision_systems = list(
+    rh.system.decision.gibbles
+)
+
 local motion_systems = list(
     nw.system.motion,
     br.system.fixture,
-    nw.system.collision
+    nw.system.collision,
+    rh.system.collision_response
 )
 
 local render_systems = list(
-    br.system.geometry_draw
+    nw.system.animation,
+    br.system.geometry_draw,
+    player_draw_system
 )
 
 local all_systems =
     render_systems
     + logic_systems
+    + decision_systems
+    + action_systems
     + motion_systems
 
 function scene.load()
@@ -49,7 +72,7 @@ function scene.load()
         :add(nw.component.position, 0, 0)
         :add(nw.component.velocity)
         :add(nw.component.gravity, 0, 100)
-        :add(br.component.flammable)
+        :add(nw.component.body)
 
     rope = ecs.entity(world)
         :add(nw.component.hitbox, -5, 0, 10, 200)
@@ -77,11 +100,13 @@ function scene.load()
             :add(nw.component.bump_world, bump_world)
             :add(nw.component.position, 300 + (i - 1) * 20, 100)
             :add(br.component.flammable)
-
         table.insert(boxes, e)
     end
 
-    boxes:tail():add(br.component.burning)
+    --boxes:tail():add(br.component.burning)
+
+    gibbles = ecs.entity(world)
+        :assemble(rh.assemblage.gibbles, 200, 200, bump_world)
 end
 
 function scene.update(dt)
@@ -89,6 +114,7 @@ function scene.update(dt)
 end
 
 function scene.draw()
+    gfx.scale(2, 2)
     world("draw")
 end
 

@@ -5,14 +5,14 @@ local function gray(alpha)
     return list(alpha, alpha, alpha, alpha)
 end
 
-local circle = gfx.prerender(20, 20, function(w, h)
+local circle = gfx.prerender(10, 10, function(w, h)
     local rx, ry = w * 0.5, h * 0.5
-    gfx.circle("fill", rx, ry, rx, ry)
+    gfx.ellipse("fill", rx, ry, rx, ry)
 end)
 
 local function fire_particle_component(x, y, w, h)
-    local area_pr_rate = 80
-    local rate = math.max(10, (w * h) / area_pr_rate)
+    local area_pr_rate = 15
+    local rate = math.max(16, (w * h) / area_pr_rate)
     return particles{
         buffer=rate * 4,
         image=circle,
@@ -22,9 +22,8 @@ local function fire_particle_component(x, y, w, h)
         size={1, 2},
         color=
             gray(1)
-            + gray(0.75)
-            + gray(0.6)
             + gray(0.5)
+            + gray(0.5 * 0.5)
             + gray(0),
         dir=-math.pi * 0.5,
         spread=math.pi * 0.25,
@@ -100,6 +99,22 @@ function burn_system:update(dt)
     List.foreach(self.particles, update_particle, dt)
 end
 
+local function spread_fire_on_collision(from, to)
+    if not from:has(br.component.burning) then return end
+    if not to:has(br.component.flammable) then return end
+
+    to
+        :remove(br.component.flammable)
+        :add(br.component.burning)
+end
+
+function burn_system:on_collision(colinfos)
+    for _, colinfo in ipairs(colinfos) do
+        spread_fire_on_collision(colinfo.item, colinfo.other)
+        spread_fire_on_collision(colinfo.other, colinfo.item)
+    end
+end
+
 function burn_system:keypressed(key)
     if key == "k" then
         self.draw_raw = not self.draw_raw
@@ -146,22 +161,21 @@ function burn_system:draw()
     gfx.push("all")
     gfx.setCanvas(canvas)
     gfx.clear(0, 0, 0, 1)
-    gfx.setColor(0.6, 1, 1, 0.5)
+    gfx.setColor(0.6, 1, 1, 1)
     gfx.setBlendMode("add")
     gfx.setShader()
-    --gfx.setShader(shader)
-    --gfx.translate(gfx.getWidth() * 0.5, gfx.getHeight() - 20)
-    --gfx.scale(2, 2)
+
     for _, entity in ipairs(self.particles) do
         local pa = entity[fire_particle_component]
         local x = entity[nw.component.position]
         local hb = entity[nw.component.hitbox]
         gfx.draw(pa, hb:move(x.x, x.y):center():unpack())
     end
+
     gfx.pop()
 
     gfx.push("all")
-    --gfx.origin()
+    gfx.origin()
     gfx.setCanvas()
     gfx.setColor(1, 1, 1, 1)
     if not self.draw_raw then

@@ -1,8 +1,10 @@
 local nw = require "nodeworks"
 local br = require "burning_rope"
+local rh = require "rocket_hook"
 
 local box_drawer_system = ecs.system.from_function(function(entity)
     local is_box = entity:has(nw.component.position, nw.component.hitbox)
+    is_box = is_box and not entity:has(rh.component.player_control)
     local is_burning = entity:has(br.component.burning)
     local is_flammable = entity:has(br.component.flammable)
     local is_charcoal = entity:has(br.component.charcoal)

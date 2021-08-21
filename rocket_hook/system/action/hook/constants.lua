@@ -1,5 +1,5 @@
 local constants = {
-    hook_distance = 200,
+    hook_distance = 150,
     player_time = 0.5,
     hook_time = 0.25,
     rocket_ease = ease.outQuad,

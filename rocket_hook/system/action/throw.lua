@@ -1,3 +1,6 @@
+local br = require "burning_rope"
+local rh = require "rocket_hook"
+
 local function box_component(x, y, w, h)
     return spatial(x, y, w, h)
 end
@@ -50,8 +53,18 @@ system["animation_event:throw"] = function(self, entity, frame)
     local slice = systems.animation.transform_slice(
         entity, frame:get_slice("throw", "body")
     )
+    --ecs.entity(self.world)
+    --    :add(box_component, slice:unpack())
+    local sx = entity[components.mirror] and -1 or 1
+
     ecs.entity(self.world)
-        :add(box_component, slice:unpack())
+        :add(components.hitbox, slice:relative(slice):unpack())
+        :add(components.bump_world, entity[components.bump_world])
+        :add(components.position, slice:center())
+        :add(components.velocity, sx * 200, -200)
+        :add(components.gravity, 0, 1000)
+        :add(rh.component.brittle)
+        :add(br.component.burning)
 end
 
 return system

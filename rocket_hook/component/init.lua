@@ -19,7 +19,10 @@ function components.player_control(state)
     return state or "normal"
 end
 
+function components.brittle() return true end
+
 local BASE = ...
+
 
 function components.__index(t, k) return require(BASE .. "." .. k) end
 
