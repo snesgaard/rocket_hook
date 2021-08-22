@@ -1,3 +1,6 @@
 [submodule "nodeworks"]
 	path = nodeworks
 	url = git@github.com:snesgaard/nodeworks.git
+[submodule "third/webgl-noise"]
+	path = third/webgl-noise
+	url = https://github.com/stegu/webgl-noise
