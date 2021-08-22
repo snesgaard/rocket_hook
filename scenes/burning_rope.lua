@@ -65,7 +65,6 @@ function scene.load()
     world = ecs.world(all_systems)
     bump_world = bump.newWorld()
 
-
     local box = ecs.entity(world)
         :add(nw.component.hitbox, 0, 0, 200, 50)
         :add(nw.component.bump_world, bump_world)
