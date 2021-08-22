@@ -3,7 +3,8 @@ local travel_distance = 50
 
 local function player_travel_tween(pos, dir, mirror)
     local d = vec2(1, -1)
-    if dir.x < 0 or mirror then d = vec2(-1, -1) end
+    if dir.x < 0 or (dir.x == 0 and mirror) then d = vec2(-1, -1) end
+
 
     return components.tween(pos:copy(), pos + d * travel_distance, travel_time)
 end
@@ -22,8 +23,18 @@ end
 
 local dodge_system = ecs.system.from_function(entity_filter)
 
+local function slip_through_filter(item, other)
+    if other[components.oneway] then return "cross" end
+
+    return systems.collision.default_move_filter(item, other)
+end
+
 function dodge_system.dodge(entity, dir)
-    entity:update(components.action, "jump", dir)
+    if dir.y <= 0 then
+        entity:update(components.action, "jump", dir)
+    else
+        systems.collision.move(entity, 0, 1, slip_through_filter)
+    end
 end
 
 function dodge_system:on_entity_added(entity)
@@ -33,6 +44,10 @@ function dodge_system:on_entity_added(entity)
     entity
         :add(dodge_component, entity[components.position], dir, mirror)
         :remove(components.velocity)
+
+    if dir.x ~= 0 then
+        entity:add(components.mirror, dir.x < 0)
+    end
 
     systems.animation.play(entity, "ascend")
 end

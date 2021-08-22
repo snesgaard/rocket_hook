@@ -104,6 +104,20 @@ function scene.load()
 
     --boxes:tail():add(br.component.burning)
 
+    ecs.entity(world)
+        :add(nw.component.body)
+        :add(nw.component.hitbox, 100, 100, 100, 10)
+        :add(nw.component.bump_world, bump_world)
+        :add(nw.component.position)
+        :add(nw.component.oneway)
+
+    ecs.entity(world)
+        :add(nw.component.body)
+        :add(nw.component.hitbox, 100, 300, 100, 10)
+        :add(nw.component.bump_world, bump_world)
+        :add(nw.component.position)
+        :add(nw.component.oneway)
+
     gibbles = ecs.entity(world)
         :assemble(rh.assemblage.gibbles, 200, 200, bump_world)
 end
