@@ -91,7 +91,7 @@ function system.update_hook(self, entity, dt)
 
     local function did_we_collide()
         for _, c in ipairs(cols) do
-            if c.other[components.body] and c.other ~= entity then
+            if c.other[components.body] and not c.other[components.oneway] and c.other ~= entity then
                 return true
             end
         end
