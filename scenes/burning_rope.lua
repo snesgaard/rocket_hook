@@ -147,7 +147,7 @@ function scene.update(dt)
     local x = 600 + 100 * math.cos(t)
     local x2 = 600 - 100 * math.cos(t)
     nw.system.collision.move_to(mover_platform, x, 330)
-    nw.system.collision.move_to(mover_platform2, x2, 330)
+    --nw.system.collision.move_to(mover_platform2, x2, 330)
 end
 
 function scene.draw()
