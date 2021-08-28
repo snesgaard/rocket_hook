@@ -1,4 +1,3 @@
-
 local scene = require "scenes.burning_rope"
 
 function love.load()

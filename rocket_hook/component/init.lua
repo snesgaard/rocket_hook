@@ -26,4 +26,6 @@ local BASE = ...
 
 function components.__index(t, k) return require(BASE .. "." .. k) end
 
+function components.moving_platform() return {} end
+
 return setmetatable(components, components)

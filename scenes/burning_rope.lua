@@ -45,7 +45,9 @@ local motion_systems = list(
     nw.system.motion,
     br.system.fixture,
     nw.system.collision,
-    rh.system.collision_response
+    nw.system.collision_contact,
+    rh.system.collision_response,
+    rh.system.moving_platform
 )
 
 local render_systems = list(
@@ -120,14 +122,36 @@ function scene.load()
 
     gibbles = ecs.entity(world)
         :assemble(rh.assemblage.gibbles, 200, 200, bump_world)
+
+    mover_platform = ecs.entity(world)
+        :add(nw.component.body)
+        :add(nw.component.hitbox, -50, -5, 100, 10)
+        :add(nw.component.position, 400, 200)
+        :add(nw.component.bump_world, bump_world)
+        :add(rh.component.moving_platform)
+        :add(nw.component.oneway)
+
+    mover_platform2 = ecs.entity(world)
+        :add(nw.component.body)
+        :add(nw.component.hitbox, -50, -5, 100, 10)
+        :add(nw.component.position, 400, 200)
+        :add(nw.component.bump_world, bump_world)
+        :add(rh.component.moving_platform)
+        :add(nw.component.oneway)
 end
 
 function scene.update(dt)
     world("update", dt)
+
+    local t = love.timer.getTime()
+    local x = 600 + 100 * math.cos(t)
+    local x2 = 600 - 100 * math.cos(t)
+    nw.system.collision.move_to(mover_platform, x, 330)
+    nw.system.collision.move_to(mover_platform2, x2, 330)
 end
 
 function scene.draw()
-    gfx.scale(2, 2)
+    --gfx.scale(2, 2)
     world("draw")
 end
 
