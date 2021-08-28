@@ -131,6 +131,7 @@ function scene.load()
         :add(rh.component.moving_platform)
         :add(nw.component.oneway)
 
+
     mover_platform2 = ecs.entity(world)
         :add(nw.component.body)
         :add(nw.component.hitbox, -50, -5, 100, 10)
@@ -138,15 +139,17 @@ function scene.load()
         :add(nw.component.bump_world, bump_world)
         :add(rh.component.moving_platform)
         :add(nw.component.oneway)
+
 end
 
 function scene.update(dt)
     world("update", dt)
 
     local t = love.timer.getTime()
-    local x = 600 + 100 * math.cos(t)
+    local x = 600 - 100 * math.cos(t)
+    local y = 330 - 100 * math.cos(t)
     local x2 = 600 - 100 * math.cos(t)
-    nw.system.collision.move_to(mover_platform, x, 330)
+    nw.system.collision.move_to(mover_platform, x, y)
     --nw.system.collision.move_to(mover_platform2, x2, 330)
 end
 

@@ -11,8 +11,10 @@ function system:on_moved(entity, dx, dy)
     end
 end
 
-function system:on_contact_begin(item, other)
+function system:on_contact_begin(item, other, colinfo)
     if not self.pool[item] or self.pool[other] then return end
+    local cos0 = -colinfo.normal.y
+    if cos0 < 0.9 then return end
 
     item[rh.component.moving_platform][other] = true
 end
