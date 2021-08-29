@@ -63,6 +63,32 @@ local all_systems =
     + action_systems
     + motion_systems
 
+
+function nw.system.collision.default_move_filter(item, other)
+    local f = item[rh.component.move_filter] or function() end
+    local t = f(item, other)
+    if t then return t end
+
+    local function is_solid(item, other)
+        if item[components.body] then return true end
+
+        if item[components.oneway] then
+            local item_hb = nw.system.collision.get_world_hitbox(item)
+            local other_hb = nw.system.collision.get_world_hitbox(other)
+            if item_hb.y >= other_hb.y + other_hb.h then return true end
+        end
+
+        return false
+    end
+
+    local item_solid = is_solid(item, other)
+    local other_solid = is_solid(other, item)
+
+    if item_solid and other_solid then return "slide" end
+
+    return "cross"
+end
+
 function scene.load()
     world = ecs.world(all_systems)
     bump_world = bump.newWorld()
@@ -107,24 +133,21 @@ function scene.load()
     --boxes:tail():add(br.component.burning)
 
     ecs.entity(world)
-        :add(nw.component.body)
         :add(nw.component.hitbox, 100, 100, 100, 10)
         :add(nw.component.bump_world, bump_world)
         :add(nw.component.position)
         :add(nw.component.oneway)
 
     ecs.entity(world)
-        :add(nw.component.body)
         :add(nw.component.hitbox, 100, 300, 100, 10)
         :add(nw.component.bump_world, bump_world)
         :add(nw.component.position)
         :add(nw.component.oneway)
 
-    gibbles = ecs.entity(world)
+    gibbles = ecs.entity(world, "gibbles")
         :assemble(rh.assemblage.gibbles, 200, 200, bump_world)
 
-    mover_platform = ecs.entity(world)
-        :add(nw.component.body)
+    mover_platform = ecs.entity(world, "platform")
         :add(nw.component.hitbox, -50, -5, 100, 10)
         :add(nw.component.position, 400, 200)
         :add(nw.component.bump_world, bump_world)
@@ -132,8 +155,7 @@ function scene.load()
         :add(nw.component.oneway)
 
 
-    mover_platform2 = ecs.entity(world)
-        :add(nw.component.body)
+    mover_platform2 = ecs.entity(world, "platform2")
         :add(nw.component.hitbox, -50, -5, 100, 10)
         :add(nw.component.position, 400, 200)
         :add(nw.component.bump_world, bump_world)
@@ -149,8 +171,9 @@ function scene.update(dt)
     local x = 600 - 100 * math.cos(t)
     local y = 330 - 100 * math.cos(t)
     local x2 = 600 - 100 * math.cos(t)
+    local y2 = 330 + 100 * math.cos(t)
     nw.system.collision.move_to(mover_platform, x, y)
-    --nw.system.collision.move_to(mover_platform2, x2, 330)
+    nw.system.collision.move_to(mover_platform2, x2, y2)
 end
 
 function scene.draw()

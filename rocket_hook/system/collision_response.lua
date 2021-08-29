@@ -1,7 +1,7 @@
 local rh = require "rocket_hook"
 
 local function on_ground_timer()
-    return components.timer.create(0.2)
+    return components.timer.create(0.1)
 end
 
 local ground_monitor = ecs.system(rh.component.player_control)
@@ -9,7 +9,7 @@ local ground_monitor = ecs.system(rh.component.player_control)
 function ground_monitor:on_collision(collisions)
     List.foreach(collisions, function(info)
         if not self.pool[info.item] then return end
-        if info.normal.y > -0.9 then return end
+        if info.normal.y > -0.9 or info.type == "cross" then return end
         info.item:add(on_ground_timer)
     end)
 
