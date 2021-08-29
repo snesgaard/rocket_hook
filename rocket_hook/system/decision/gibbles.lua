@@ -1,6 +1,8 @@
 local rh = require "rocket_hook"
 
-local system = ecs.system(rh.component.player_control, components.action)
+local system = ecs.system(
+    rh.component.player_control, components.action, components.hook_charges
+)
 
 
 local function get_input_direction()
@@ -27,10 +29,14 @@ local input_pressed_handlers = {}
 
 
 function input_pressed_handlers.idle(entity, input)
-    if input == "hook" then
+    local h = entity[rh.component.hook_charges]
+    local charge_index = List.argfind(h, function(t) return t:done() end)
+
+    if input == "hook" and charge_index then
         --entity:update(components.action, "hook", get_input_direction())
+        h[charge_index]:reset()
         rh.system.action.hook.hook(entity, get_input_direction())
-    elseif input == "jump" then
+    elseif input == "jump"  then
         rh.system.action.dodge.dodge(entity, get_input_direction())
     elseif input == "throw" then
         rh.system.action.throw.throw(entity, get_input_direction())
@@ -82,6 +88,58 @@ function system:update(dt)
             end
         end
     end)
+
+    List.foreach(self.pool, function(entity)
+        local h = entity[rh.component.hook_charges]
+        for _, t in ipairs(h) do
+            if not t:done() then t:update(dt) end
+        end
+    end)
+end
+
+local icon = get_atlas("art/characters"):get_frame("rocket_icon")
+local shader = gfx.newShader(
+[[
+vec4 effect(vec4 colour, Image texture, vec2 texpos, vec2 scrpos)
+{
+    vec4 pixel = Texel(texture, texpos) * colour;
+    if (pixel.a < 0.5) discard;
+    return pixel;
+}
+]]
+)
+
+function system:gui()
+    for _, entity in ipairs(self.pool) do
+        gfx.push("all")
+
+        local hook_charges = entity[rh.component.hook_charges]
+
+        for i, t in ipairs(hook_charges) do
+            gfx.setColor(1, 1, 1)
+            --gfx.rectangle("fill", i * 75, 25, 50, 50)
+            local tl = math.max(0, t:time_left_normalized())
+            gfx.setColor(1, 1, 1)
+            gfx.setShader(shader)
+            local x, y = i * 75 - 25, 50
+            gfx.stencil(
+                function()
+                    gfx.setColorMask(true, true, true, true)
+                    icon:draw("body", x, y, 0, 2, 2)
+                end,
+                "replace", 2
+            )
+            gfx.setStencilTest("equal", 2)
+            gfx.setShader()
+            gfx.setColor(0, 0, 0, 0.9)
+            gfx.arc("fill", x, y, 200, -math.pi * 0.5, -math.pi * 0.5 + math.pi * 2 * tl)
+            --gfx.rectangle("fill", i * 75 - 25, 25, 50, 50 * tl)
+        end
+
+        gfx.pop()
+
+        return
+    end
 end
 
 

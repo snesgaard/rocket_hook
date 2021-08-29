@@ -5,7 +5,8 @@ local constants = require(... .. ".constants")
 local system = ecs.system.from_function(
     function(entity)
         return {
-            entities = entity:has(components.action, components.bump_world, components.position)
+            entities = entity:has(components.action, components.bump_world
+                and components.position)
                 and entity[components.action]:type() == "hook",
             smoke = entity:has(hook_components.smoke)
         }
@@ -128,6 +129,7 @@ function system.update_drag(self, entity, dt)
 
     if tween:is_done() then
         local velocity = tween:derivative(tween:get_duration()) * dir
+        velocity.y = math.min(velocity.y, -100)
         entity
             :add(components.velocity, velocity:unpack())
     end
