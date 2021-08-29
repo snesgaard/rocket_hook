@@ -179,6 +179,8 @@ end
 function scene.draw()
     --gfx.scale(2, 2)
     world("draw")
+    gfx.origin()
+    world("gui")
 end
 
 function scene.keypressed(key, ...)
