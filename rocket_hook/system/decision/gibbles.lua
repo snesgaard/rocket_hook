@@ -1,7 +1,8 @@
 local rh = require "rocket_hook"
 
 local system = ecs.system(
-    rh.component.player_control, components.action, components.hook_charges
+    rh.component.player_control, components.action, components.hook_charges,
+    rh.component.can_jump
 )
 
 
@@ -35,8 +36,10 @@ function input_pressed_handlers.idle(entity, input)
     if input == "hook" and charge_index then
         --entity:update(components.action, "hook", get_input_direction())
         h[charge_index]:reset()
+        entity[rh.component.can_jump] = true
         rh.system.action.hook.hook(entity, get_input_direction())
-    elseif input == "jump"  then
+    elseif input == "jump" and entity[rh.component.can_jump] then
+        entity[rh.component.can_jump] = false
         rh.system.action.dodge.dodge(entity, get_input_direction())
     elseif input == "throw" then
         rh.system.action.throw.throw(entity, get_input_direction())
@@ -54,6 +57,13 @@ end
 
 
 function system:input_released(key)
+end
+
+
+function system:on_ground_collision(entity)
+    if not self.pool[entity] then return end
+
+    entity[rh.component.can_jump] = true
 end
 
 

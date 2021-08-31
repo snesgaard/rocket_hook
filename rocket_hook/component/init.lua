@@ -44,6 +44,8 @@ function components.hook_charges(max_charges)
     return l
 end
 
+function components.can_jump() return true end
+
 function components.camera_slack(x, y) return vec2(x, y) end
 
 function components.scale(x, y) return vec2(x, y) end

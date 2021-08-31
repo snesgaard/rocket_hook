@@ -11,6 +11,8 @@ function ground_monitor:on_collision(collisions)
         if not self.pool[info.item] then return end
         if info.normal.y > -0.9 or info.type == "cross" then return end
         info.item:add(on_ground_timer)
+
+        self.world("on_ground_collision", info.item)
     end)
 
     List.foreach(collisions, function(info)
