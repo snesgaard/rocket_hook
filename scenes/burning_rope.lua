@@ -53,6 +53,7 @@ local motion_systems = list(
 local render_systems = list(
     nw.system.animation,
     br.system.geometry_draw,
+    rh.system.camera,
     player_draw_system
 )
 
@@ -162,6 +163,9 @@ function scene.load()
         :add(rh.component.moving_platform)
         :add(nw.component.oneway)
 
+    camera = ecs.entity(world)
+        :assemble(rh.assemblage.camera, gibbles)
+
 end
 
 function scene.update(dt)
@@ -178,6 +182,7 @@ end
 
 function scene.draw()
     --gfx.scale(2, 2)
+    rh.system.camera.track(camera).transform(camera)
     world("draw")
     gfx.origin()
     world("gui")

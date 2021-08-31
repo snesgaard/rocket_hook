@@ -119,7 +119,11 @@ function system:gui()
             gfx.setColor(1, 1, 1)
             --gfx.rectangle("fill", i * 75, 25, 50, 50)
             local tl = math.max(0, t:time_left_normalized())
-            gfx.setColor(1, 1, 1)
+            if tl <= 0 then
+                gfx.setColor(1, 1, 1)
+            else
+                gfx.setColor(0.7, 0.7, 0.7)
+            end
             gfx.setShader(shader)
             local x, y = i * 75 - 25, 50
             gfx.stencil(
@@ -132,8 +136,10 @@ function system:gui()
             gfx.setStencilTest("equal", 2)
             gfx.setShader()
             gfx.setColor(0, 0, 0, 0.9)
-            gfx.arc("fill", x, y, 200, -math.pi * 0.5, -math.pi * 0.5 + math.pi * 2 * tl)
-            --gfx.rectangle("fill", i * 75 - 25, 25, 50, 50 * tl)
+            gfx.arc(
+                "fill", x, y, 200, -math.pi * 0.5,
+                -math.pi * 0.5 + math.pi * 2 * tl
+            )
         end
 
         gfx.pop()
