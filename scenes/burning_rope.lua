@@ -131,8 +131,6 @@ function scene.load()
         table.insert(boxes, e)
     end
 
-    --boxes:tail():add(br.component.burning)
-
     ecs.entity(world)
         :add(nw.component.hitbox, 100, 100, 100, 10)
         :add(nw.component.bump_world, bump_world)
@@ -165,6 +163,16 @@ function scene.load()
 
     camera = ecs.entity(world)
         :assemble(rh.assemblage.camera, gibbles)
+
+
+    local foobar = {1, 2, 3, 4, 5}
+
+    for index, value in pairs(foobar) do
+        print("go", index, value)
+        if index == 2 then
+            table.remove(foobar, index)
+        end
+    end
 
 end
 
