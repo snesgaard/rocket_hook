@@ -131,8 +131,6 @@ function scene.load()
         table.insert(boxes, e)
     end
 
-    --boxes:tail():add(br.component.burning)
-
     ecs.entity(world)
         :add(nw.component.hitbox, 100, 100, 100, 10)
         :add(nw.component.bump_world, bump_world)
@@ -165,7 +163,6 @@ function scene.load()
 
     camera = ecs.entity(world)
         :assemble(rh.assemblage.camera, gibbles)
-
 end
 
 function scene.update(dt)

@@ -2,9 +2,8 @@ local rh = require "rocket_hook"
 
 local system = ecs.system(
     rh.component.player_control, components.action, components.hook_charges,
-    rh.component.can_jump
+    rh.component.can_jump, rh.component.input_buffer
 )
-
 
 local function get_input_direction()
     local dir_from_input = {
@@ -34,24 +33,34 @@ function input_pressed_handlers.idle(entity, input)
     local charge_index = List.argfind(h, function(t) return t:done() end)
 
     if input == "hook" and charge_index then
-        --entity:update(components.action, "hook", get_input_direction())
         h[charge_index]:reset()
         entity[rh.component.can_jump] = true
         rh.system.action.hook.hook(entity, get_input_direction())
+        return true
     elseif input == "jump" and entity[rh.component.can_jump] then
         entity[rh.component.can_jump] = false
         rh.system.action.dodge.dodge(entity, get_input_direction())
+        return true
     elseif input == "throw" then
         rh.system.action.throw.throw(entity, get_input_direction())
+        return true
     end
+end
+
+
+local function handle_input(input, entity)
+    local action = entity[components.action]:type()
+    local f = input_pressed_handlers[action]
+    if f then return f(entity, input) end
 end
 
 
 function system:input_pressed(input)
     for _, entity in ipairs(self.pool) do
-        local action = entity[components.action]:type()
-        local f = input_pressed_handlers[action]
-        if f then f(entity, input) end
+        if not handle_input(input, entity) then
+            local buffer = entity[rh.component.input_buffer]
+            buffer:add(input)
+        end
     end
 end
 
@@ -104,6 +113,12 @@ function system:update(dt)
         for _, t in ipairs(h) do
             if not t:done() then t:update(dt) end
         end
+    end)
+
+    List.foreach(self.pool, function(entity)
+        local buffer = entity[rh.component.input_buffer]
+        buffer:update(dt)
+        buffer:foreach(handle_input, entity)
     end)
 end
 

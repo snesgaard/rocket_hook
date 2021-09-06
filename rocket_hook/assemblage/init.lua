@@ -50,7 +50,8 @@ function assemblages.gibbles(x, y, bump_world)
         },
         [nw.component.action] = {"idle"},
         [rh.component.hook_charges] = {},
-        [rh.component.can_jump] = {}
+        [rh.component.can_jump] = {},
+        [rh.component.input_buffer] = {}
     }
 
     return ass + assemblages.player_motion
