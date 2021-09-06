@@ -163,17 +163,6 @@ function scene.load()
 
     camera = ecs.entity(world)
         :assemble(rh.assemblage.camera, gibbles)
-
-
-    local foobar = {1, 2, 3, 4, 5}
-
-    for index, value in pairs(foobar) do
-        print("go", index, value)
-        if index == 2 then
-            table.remove(foobar, index)
-        end
-    end
-
 end
 
 function scene.update(dt)
