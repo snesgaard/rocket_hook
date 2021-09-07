@@ -1,4 +1,4 @@
-local scene = require "scenes.burning_rope"
+local scene = require "scenes.freeze"
 
 function love.load()
     if scene.load then scene.load() end
