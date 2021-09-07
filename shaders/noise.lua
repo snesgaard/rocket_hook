@@ -90,7 +90,7 @@ float noise(vec2 P){
   vec2 fade_xy = fade(Pf.xy);
   vec2 n_x = mix(vec2(n00, n01), vec2(n10, n11), fade_xy.x);
   float n_xy = mix(n_x.x, n_x.y, fade_xy.y);
-  return 2.3 * n_xy;
+  return 2.3 * n_xy * 0.5 + 0.5;
 }
 ]]
 
@@ -123,7 +123,7 @@ float noise(vec2 v){
   vec3 g;
   g.x  = a0.x  * x0.x  + h.x  * x0.y;
   g.yz = a0.yz * x12.xz + h.yz * x12.yw;
-  return 130.0 * dot(m, g);
+  return 130.0 * dot(m, g) * 0.5 + 0.5;
 }
 ]]
 
@@ -202,11 +202,12 @@ local render_shader = [[
 uniform vec2 shift;
 uniform vec2 scale;
 uniform vec2 size;
+uniform bool invert;
 
 vec4 effect(vec4 color, Image tex, vec2 texture_coords, vec2 screen_coords)
 {
     float n = noise(texture_coords * size * scale + shift);
-    return vec4(vec3(n), 1.0);
+    return vec4(vec3(invert ? 1 - n : n), 1.0);
 }
 ]]
 
@@ -228,6 +229,7 @@ local function noise_render(node, args)
     node:shader():send("shift", ensure_vec2(shift))
     node:shader():send("scale", ensure_vec2(scale))
     node:shader():send("size", {w, h})
+    node:shader():send("invert", args.invert and true or false)
     gfx.draw(mesh, 0, 0, 0, w, h)
 
     return noise_canvas
