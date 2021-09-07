@@ -185,14 +185,15 @@ function scene:draw()
 
     local noise = nodes.simplex_noise(noise_args)
 
-    local distance = nodes.rectangle_distance(100, 100, 200, 32)
+    local distance = nodes.rectangle_distance(100, 100, 200, 200)
     local ice = {
         nodes.bottom_ice_layer(distance, noise, 10, 60, gfx.hex2color("55587b"), 1),
         nodes.mid_ice_layer(distance, noise, 10, 26, gfx.hex2color("5facd8"), 0.0),
-        nodes.top_ice_layer(distance, noise, 0, 16, gfx.hex2color("98f0fc")),
+        nodes.top_ice_layer(distance, noise, 3, 16, gfx.hex2color("98f0fc")),
     }
     local color = nodes.blend({clear={0, 0, 0, 0}, mode="alpha"}, ice)
 
+    gfx.scale(2, 2)
     gfx.draw(color, 0, 0)
 end
 
