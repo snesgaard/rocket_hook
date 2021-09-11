@@ -26,18 +26,22 @@ local palette = palette_blue
 
 local ice_borders = {
     --{min_distance=5, max_distance=20, palette=palette.ice.final, x=0, y=3},
+    {min_distance=20, max_distance=25, color=palette.ice.bottom},
     {min_distance=5, max_distance=20, color=palette.ice.mid},
     {min_distance=0, max_distance=8, color=palette.ice.top},
 }
 
-local function create_canvas(w, h)
+local function create_canvas(w, h, tiled)
     w = w or gfx.getWidth()
     h = h or gfx.getHeight()
 
+    local tw = tiled and 64 or w
+    local th = tiled and 64 or h
+
     return {
         noise = {
-            crack = gfx.newCanvas(w, h, {format="r32f"}),
-            border = gfx.newCanvas(w, h, {format="r32f"})
+            crack = gfx.newCanvas(tw, th, {format="r32f"}),
+            border = gfx.newCanvas(tw, th, {format="r32f"})
         },
         single_distance = gfx.newCanvas(w, h, {format="r32f"}),
         ice_layer = {
@@ -47,7 +51,7 @@ local function create_canvas(w, h)
     }
 end
 
-local canvas = create_canvas()
+local canvas = create_canvas(gfx.getWidth(), gfx.getHeight())
 
 local scene = {}
 
@@ -65,6 +69,8 @@ function scene.load()
     noise.simplex:render_to(
         canvas.noise.crack, {wavelength=15, color={1, 1, 1, 0.08}}
     )
+    canvas.noise.crack:setWrap("repeat")
+    canvas.noise.border:setWrap("repeat")
     noise.simplex:render_to(canvas.noise.border, {wavelength=10})
     canvas.single_distance:renderTo(function()
         gfx.clear(10000, 10000, 10000, 1)
@@ -73,6 +79,7 @@ function scene.load()
         for _, is in ipairs(ice_shapes) do
             sdf.rectangle(is:unpack())
         end
+        sdf.circle(500, 150, 100)
         gfx.pop("all")
     end)
     --:render_to(canvas.single_distance, ice_shape:unpack())
@@ -86,10 +93,11 @@ end
 
 function scene.draw()
     gfx.scale(2, 2)
-    gfx.setColor(palette.ice.bottom)
     for _, is in ipairs(ice_shapes) do
+        gfx.setColor(palette.ice.bottom)
         gfx.rectangle("fill", is:unpack())
     end
+    gfx.circle("fill", 500, 150, 100)
 
     gfx.stencil(
         function()
@@ -107,15 +115,8 @@ function scene.draw()
         gfx.pop()
     end
 
-    if draw_mid then
-        gfx.setColor(palette.ice.mid:alpha(0.7))
-        ice.speckle(canvas.single_distance, canvas.noise.crack, 0.07)
-    end
-
-    if draw_top then
-        gfx.setColor(palette.ice.top:alpha(0.7))
-        ice.speckle(canvas.single_distance, canvas.noise.crack, 0.023)
-    end
+    gfx.setColor(palette.ice.mid:alpha(0.7))
+    ice.speckle(canvas.single_distance, canvas.noise.crack, 0.07)
 
     for _, ib in ipairs(ice_borders) do
         gfx.push()
@@ -127,6 +128,8 @@ function scene.draw()
         gfx.pop()
     end
 
+    gfx.setColor(palette.ice.top:alpha(0.7))
+    ice.speckle(canvas.single_distance, canvas.noise.crack, 0.023)
 
     --gfx.draw(canvas.noise.crack)
 

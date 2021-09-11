@@ -1,5 +1,25 @@
 local shader = require "shaders.shader"
 
+local circle = {
+    shader_str = [[
+    uniform vec2 center;
+    uniform float radius;
+
+    vec4 effect(vec4 color, Image tex, vec2 texture_coords, vec2 screen_coords)
+    {
+        vec2 d = screen_coords - center;
+        float c = length(d) - radius;
+        return vec4(vec3(c), 1.0);
+    }
+
+    ]],
+
+    func = function(shader, x, y, r)
+        shader:send("center", {x, y})
+        shader:send("radius", r)
+        gfx.rectangle("fill", 0, 0, shader:get_size())
+    end
+}
 
 local rectangle = {
     shader_str = [[
@@ -52,5 +72,6 @@ local interior = {
 
 return {
     rectangle = shader(rectangle.func, rectangle.shader_str),
-    interior = shader(interior.func, interior.shader_str)
+    interior = shader(interior.func, interior.shader_str),
+    circle = shader(circle.func, circle.shader_str)
 }

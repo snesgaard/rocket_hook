@@ -4,6 +4,7 @@ local border = {
     shader_str = [[
 
     uniform Image noise;
+    uniform vec2 noise_ratio;
     uniform float max_distance;
     uniform float min_distance;
     uniform float min_prob;
@@ -12,7 +13,7 @@ local border = {
     {
         float d = Texel(distance, texture_coords).x;
         if (d > 0) discard;
-        float n = Texel(noise, texture_coords).x;
+        float n = Texel(noise, texture_coords * noise_ratio).x;
         //float s = smoothstep(-max_distance, -min_distance, d);
         float edge0 = -max_distance;
         float edge1 = -min_distance;
@@ -34,6 +35,13 @@ local border = {
         shader:send("min_distance", min_distance)
         shader:send("max_distance", max_distance)
         shader:send("noise", noise_canvas)
+        shader:send(
+            "noise_ratio",
+            {
+                distance_canvas:getWidth() / noise_canvas:getWidth(),
+                distance_canvas:getHeight() / noise_canvas:getHeight(),
+            }
+        )
         shader:send("min_prob", min_prob or 0)
         gfx.draw(distance_canvas)
     end
@@ -42,11 +50,12 @@ local border = {
 local speckle = {
     shader_str = [[
     uniform float edge;
-    uniform Image distance;
+    uniform Image noise;
+    uniform vec2 noise_ratio;
 
-    vec4 effect(vec4 color, Image noise, vec2 texture_coords, vec2 screen_coords)
+    vec4 effect(vec4 color, Image distance, vec2 texture_coords, vec2 screen_coords)
     {
-        float n = Texel(noise, texture_coords).r;
+        float n = Texel(noise, texture_coords * noise_ratio).r;
         float d = Texel(distance, texture_coords).r;
         if (d > 0) discard;
         float s = step(-edge, -n);
@@ -58,8 +67,16 @@ local speckle = {
 
     func = function(shader, distance, noise, edge)
         shader:send("edge", edge)
-        shader:send("distance", distance)
-        gfx.draw(noise, 0, 0)
+        shader:send("noise", noise)
+        shader:send(
+            "noise_ratio",
+            {
+                distance:getWidth() / noise:getWidth(),
+                distance:getHeight() / noise:getHeight()
+            }
+        )
+
+        gfx.draw(distance, 0, 0)
     end
 }
 
