@@ -1,1 +1,1 @@
-../../../../../../repos/nodeworks/art_ws/Makefile.sprite
+../../nodeworks/art_ws/Makefile.sprite

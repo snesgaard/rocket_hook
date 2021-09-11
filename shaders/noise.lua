@@ -1,3 +1,5 @@
+local glsl_random = require "shaders.random"
+
 local noise = {}
 
 noise.generic_1 = [[
@@ -140,7 +142,7 @@ float t = time/SWITCH_TIME;
 float function 			= mod(t,4.0);
 bool  multiply_by_F1	= mod(t,8.0)  >= 4.0;
 bool  inverse				= mod(t,16.0) >= 8.0;
-float distance_type	= mod(t/16.0,4.0);
+float distance_type	= 0.5 + 1;
 
 vec2 hash( vec2 p ){
 	p = vec2( dot(p,vec2(127.1,311.7)),dot(p,vec2(269.5,183.3)));
@@ -190,6 +192,61 @@ float noise( in vec2 x ){
 
 ]]
 
+noise.voroni_good = glsl_random.rand_2d_to_2d .. [[
+
+vec3 voronoi_noise(vec2 value){
+    vec2 baseCell = floor(value);
+
+    //first pass to find the closest cell
+    float minDistToCell = 10;
+    vec2 toClosestCell;
+    vec2 closestCell;
+
+    for(int x1=-1; x1<=1; x1++){
+        for(int y1=-1; y1<=1; y1++){
+            vec2 cell = baseCell + vec2(x1, y1);
+            vec2 cellPosition = cell + rand_2d_to_2d(cell);
+            vec2 toCell = cellPosition - value;
+            float distToCell = length(toCell);
+            if(distToCell < minDistToCell){
+                minDistToCell = distToCell;
+                closestCell = cell;
+                toClosestCell = toCell;
+            }
+        }
+    }
+
+    //second pass to find the distance to the closest edge
+    float minEdgeDistance = 10;
+
+    for(int x2=-1; x2<=1; x2++){
+        for(int y2=-1; y2<=1; y2++){
+            vec2 cell = baseCell + vec2(x2, y2);
+            vec2 cellPosition = cell + rand_2d_to_2d(cell);
+            vec2 toCell = cellPosition - value;
+
+            vec2 diffToClosestCell = abs(closestCell - cell);
+            bool isClosestCell = diffToClosestCell.x + diffToClosestCell.y < 0.1;
+            if(!isClosestCell){
+                vec2 toCenter = (toClosestCell + toCell) * 0.5;
+                vec2 cellDifference = normalize(toCell - toClosestCell);
+                float edgeDistance = dot(toCenter, cellDifference);
+                minEdgeDistance = min(minEdgeDistance, edgeDistance);
+            }
+        }
+    }
+
+    float random = rand_2d_to_1d(closestCell);
+    return vec3(minDistToCell, random, minEdgeDistance);
+}
+
+float noise(vec2 x) {
+	vec3 d = voronoi_noise(x);
+	return d.z;
+}
+
+]]
+
 local mesh = gfx.newMesh({
     {0, 0, 0, 0},
     {0, 1, 0, 1},
@@ -207,7 +264,7 @@ uniform bool invert;
 vec4 effect(vec4 color, Image tex, vec2 texture_coords, vec2 screen_coords)
 {
     float n = noise(texture_coords * size * scale + shift);
-    return vec4(vec3(invert ? 1 - n : n), 1.0);
+    return vec4(vec3(invert ? 1 - n : n), 1.0) * color;
 }
 ]]
 
@@ -215,34 +272,48 @@ local function ensure_vec2(v)
     return type(v) == "number" and {v, v} or v
 end
 
-local function noise_render(node, args)
+local function get_size()
+	local canvas = gfx.getCanvas()
+	if canvas then
+		return canvas:getWidth(), canvas:getHeight()
+	else
+		return gfx.getWidth(), gfx.getHeight()
+	end
+end
+
+local function noise_render(shader, args)
     args = args or {}
-    local w = args.width or gfx.getWidth()
-    local h = args.height or gfx.getHeight()
     local shift = args.shift or 0
-    local scale = args.scale or 1
+	local wavelength = args.wavelength or 1
+    local scale = 1.0 / wavelength
+	local w, h = get_size()
 
-    local canvas_args = {format="r32f"}
-    local noise_canvas = node:canvas(w, h, canvas_args)
-
-    gfx.clear()
-    node:shader():send("shift", ensure_vec2(shift))
-    node:shader():send("scale", ensure_vec2(scale))
-    node:shader():send("size", {w, h})
-    node:shader():send("invert", args.invert and true or false)
+    --gfx.clear()
+	if args.color then gfx.setColor(args.color) end 
+    shader:send("shift", ensure_vec2(shift))
+    shader:send("scale", ensure_vec2(scale))
+    shader:send("size", {w, h})
+    shader:send("invert", args.invert and true or false)
     gfx.draw(mesh, 0, 0, 0, w, h)
 
     return noise_canvas
 end
 
-return function(noise_type)
-    local noise_str = noise[noise_type]
-    if not noise_str then
-        errorf("Unknown noise type %s", noise_type)
-    end
+local shader = require "shaders.shader"
+
+local function create(noise_str)
     local shader_str = noise_str .. render_shader
 
-    local node = draw_node(noise_render, shader_str)
+	print("__SHADER__")
+	print(shader_str)
 
-    return node
+    return shader(noise_render, shader_str)
 end
+
+local noise_shaders = {}
+
+for key, noise_str in pairs(noise) do
+	noise_shaders[key] = create(noise_str)
+end
+
+return noise_shaders
