@@ -1,1 +1,1 @@
-../../../../../../repos/nodeworks/art_ws/Makefile.maps
+../../nodeworks/art_ws/Makefile.maps

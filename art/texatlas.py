@@ -1,1 +1,1 @@
-../../../../../repos/nodeworks/art_ws/texatlas.py
+../nodeworks/art_ws/texatlas.py
