@@ -51,7 +51,7 @@ local function create_canvas(w, h, tiled)
     }
 end
 
-local canvas = create_canvas(gfx.getWidth(), gfx.getHeight())
+local canvas = create_canvas(gfx.getWidth(), gfx.getHeight(), true)
 
 local scene = {}
 
