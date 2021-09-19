@@ -1,200 +1,140 @@
 local nw = require "nodeworks"
 local noise = require "shaders.noise"
+local sdf = require "shaders.sdf"
+local ice = require "shaders.ice"
+local blend = require "shaders.blend"
 
-local rectangle_distance = {
-    shader = [[
-
-    uniform vec2 pos;
-    uniform vec2 size;
-
-    // Taken from https://www.iquilezles.org/www/articles/distfunctions2d/distfunctions2d.htm
-    float sdBox( in vec2 p, in vec2 b ) {
-        vec2 d = abs(p)-b;
-        return length(max(d,0.0)) + min(max(d.x,d.y),0.0);
+local palette_purple = {
+    ice = {
+        final = color("453c50"),
+        bottom = color("55587b"),
+        mid = color("5facd8"),
+        top = color("98f0fc")
     }
-
-    vec4 effect(vec4 color, Image tex, vec2 texture_coords, vec2 screen_coords)
-    {
-        vec2 b = size * 0.5;
-        vec2 center = pos + b;
-        float d = sdBox(screen_coords - center, b);
-        return vec4(vec3(d), 1.0);
-    }
-
-    ]],
-
-    func = function(node, x, y, w, h)
-        local canvas_args = {format="r32f"}
-        local cw, ch = gfx.getWidth(), gfx.getHeight()
-        local canvas = node:canvas(cw, ch, canvas_args)
-        gfx.clear(0, 0, 0, 1)
-        node:shader():send("pos", {x, y})
-        node:shader():send("size", {w, h})
-        gfx.rectangle("fill", 0, 0, cw, ch)
-        return canvas
-    end
 }
 
-local ice_layer = {
-    shader = [[
-
-    uniform Image noise;
-    uniform float max_distance;
-    uniform float min_distance;
-    uniform float min_prob;
-
-    vec4 effect(vec4 color, Image distance, vec2 texture_coords, vec2 screen_coords)
-    {
-        float d = Texel(distance, texture_coords).x;
-        if (d > 0) discard;
-        float n = Texel(noise, texture_coords).x;
-        //float s = smoothstep(-max_distance, -min_distance, d);
-        float edge0 = -max_distance;
-        float edge1 = -min_distance;
-        float s = clamp((d - edge0) / (edge1 - edge0), 0, 1);
-        float t = mix(1, 0, max(min_prob, s));
-        float i = step(t, n);
-        return vec4(i) * color;
+local palette_blue = {
+    ice = {
+        final = color("453c50"),
+        bottom = color("3c87cb"),
+        mid = color("52a6d2"),
+        top = color("c0cfd6")
     }
-
-    ]],
-
-    func = function(node, distance, noise, min_distance, max_distance, color, min_prob)
-        local cw, ch = gfx.getWidth(), gfx.getHeight()
-        local canvas = node:canvas(cw, ch)
-        gfx.clear()
-        gfx.setColor(color or {1, 1, 1, 1})
-
-        node:shader():send("min_distance", min_distance)
-        node:shader():send("max_distance", max_distance)
-        if node:shader():hasUniform("noise") then
-            node:shader():send("noise", noise)
-        end
-        if node:shader():hasUniform("min_prob") then
-            node:shader():send("min_prob", min_prob or 0)
-        end
-        gfx.draw(distance)
-        return canvas
-    end
 }
 
+local palette = palette_blue
 
-local ramp_noise_shader = [[
-
-vec4 effect(vec4 color, Image tex, vec2 texture_coords, vec2 screen_coords)
-{
-    float n = Texel(tex, texture_coords).x;
-    float x = step(0.5, n);
-    return vec4(vec3(x), 1.0) * color;
+local ice_borders = {
+    --{min_distance=5, max_distance=20, palette=palette.ice.final, x=0, y=3},
+    {min_distance=20, max_distance=25, color=palette.ice.bottom},
+    {min_distance=5, max_distance=20, color=palette.ice.mid},
+    {min_distance=0, max_distance=8, color=palette.ice.top},
 }
 
-]]
+local function create_canvas(w, h, tiled)
+    w = w or gfx.getWidth()
+    h = h or gfx.getHeight()
 
-local function ramp_noise(node, noise_canvas)
-    local color = node:canvas(noise_canvas:getWidth(), noise_canvas:getHeight())
-    gfx.clear()
-    gfx.draw(noise_canvas, 0, 0)
-    return color
+    local tw = tiled and 64 or w
+    local th = tiled and 64 or h
+
+    return {
+        noise = {
+            crack = gfx.newCanvas(tw, th, {format="r32f"}),
+            border = gfx.newCanvas(tw, th, {format="r32f"})
+        },
+        single_distance = gfx.newCanvas(w, h, {format="r32f"}),
+        ice_layer = {
+            single = gfx.newCanvas(w, h),
+            blended = gfx.newCanvas(w, h)
+        }
+    }
 end
 
-local function blend_canvas(node, args, buffers)
-    local w = List.reduce(
-        buffers,
-        function(v, c) return math.max(v, c:getWidth()) end,
-        0
-    )
-    local h = List.reduce(
-        buffers,
-        function(v, c) return math.max(v, c:getHeight()) end,
-        0
-    )
-
-    local color = node:canvas(w, h)
-
-    gfx.clear(args.clear)
-    gfx.setBlendMode(args.mode)
-
-    for _, b in ipairs(buffers) do
-        gfx.draw(b, 0, 0)
-    end
-
-    return color
-end
-
-local function layer_canvas(node, args, layers)
-    local w = List.reduce(
-        layers,
-        function(v, c) return math.max(v, c[2]:getWidth()) end,
-        0
-    )
-    local h = List.reduce(
-        layers,
-        function(v, c) return math.max(v, c[2]:getHeight()) end,
-        0
-    )
-
-    local color = node:canvas(w, h, args.canvas_args)
-    gfx.clear(args.clear or {0, 0, 0, 0})
-
-    for _, l in ipairs(layers) do
-        local mode, canvas = unpack(l)
-        gfx.setBlendMode(mode or "alpha")
-        gfx.draw(canvas, layers.x or 0, layers.y or 0)
-    end
-
-    return color
-end
+local canvas = create_canvas(gfx.getWidth(), gfx.getHeight())
 
 local scene = {}
 
-function scene:load()
-    nodes = {
-        generic_noise = noise("generic_1"),
-        simplex_noise = noise("simplex"),
-        voroni_noise = noise("voroni"),
-        perlin_noise = noise("perlin"),
-        ramp_noise = draw_node(ramp_noise, ramp_noise_shader),
-        blend = draw_node(blend_canvas),
-        layer = draw_node(layer_canvas),
-        rectangle_distance = draw_node(
-            rectangle_distance.func, rectangle_distance.shader
-        ),
-        top_ice_layer = draw_node(ice_layer.func, ice_layer.shader),
-        mid_ice_layer = draw_node(ice_layer.func, ice_layer.shader),
-        bottom_ice_layer = draw_node(ice_layer.func, ice_layer.shader),
-    }
+local ice_shapes = {
+    spatial(10, 10, 32, 32),
+    spatial(50, 10, 200, 32),
+    spatial(10, 50, 32, 200),
+    spatial(50, 50, 200, 200),
+    spatial(300, 150, 200, 32),
+    spatial(350, 50, 32, 200),
+}
 
-
-    time = 0
+function scene.load()
+    noise.voroni_good:render_to(canvas.noise.crack, {wavelength=15})
+    noise.simplex:render_to(
+        canvas.noise.crack, {wavelength=15, color={1, 1, 1, 0.08}}
+    )
+    canvas.noise.crack:setWrap("repeat")
+    canvas.noise.border:setWrap("repeat")
+    noise.simplex:render_to(canvas.noise.border, {wavelength=10})
+    canvas.single_distance:renderTo(function()
+        gfx.clear(10000, 10000, 10000, 1)
+        gfx.push("all")
+        gfx.setBlendMode("darken", "premultiplied")
+        for _, is in ipairs(ice_shapes) do
+            sdf.rectangle(is:unpack())
+        end
+        sdf.circle(500, 150, 100)
+        gfx.pop("all")
+    end)
+    --:render_to(canvas.single_distance, ice_shape:unpack())
 end
 
-function scene.update(dt)
-    time = time + dt
+function scene.keypressed(key, scancode, isrepeat)
+    if key == "t" then draw_top = not draw_top end
+    if key == "m" then draw_mid = not draw_mid end
+    if key == "b" then draw_bottom = not draw_bottom end
 end
 
-function scene:draw()
-    local noise_args = dict{scale=0.1}
-
-    local layers = {
-        {"add", nodes.generic_noise(noise_args:set("shift", time))},
-        {"add", nodes.voroni_noise(noise_args:set("shift", -time))},
-        {"add", nodes.perlin_noise(noise_args:set("shift", {time, -time}))}
-    }
-
-    local color = nodes.layer({clear={0, 0, 0, 1}}, layers)
-
-    local noise = nodes.simplex_noise(noise_args)
-
-    local distance = nodes.rectangle_distance(100, 100, 200, 200)
-    local ice = {
-        nodes.bottom_ice_layer(distance, noise, 10, 60, gfx.hex2color("55587b"), 1),
-        nodes.mid_ice_layer(distance, noise, 10, 26, gfx.hex2color("5facd8"), 0.0),
-        nodes.top_ice_layer(distance, noise, 3, 16, gfx.hex2color("98f0fc")),
-    }
-    local color = nodes.blend({clear={0, 0, 0, 0}, mode="alpha"}, ice)
-
+function scene.draw()
     gfx.scale(2, 2)
-    gfx.draw(color, 0, 0)
+    for _, is in ipairs(ice_shapes) do
+        gfx.setColor(palette.ice.bottom)
+        gfx.rectangle("fill", is:unpack())
+    end
+    gfx.circle("fill", 500, 150, 100)
+
+    gfx.stencil(
+        function()
+            sdf.interior(canvas.single_distance)
+        end
+    )
+    gfx.setStencilTest("equal", 1)
+
+
+    if draw_bottom then
+        gfx.push()
+        gfx.translate(0, 1)
+        gfx.setColor(palette.ice.final:alpha(0.3))
+        ice.speckle(canvas.single_distance, canvas.noise.crack, 0.05)
+        gfx.pop()
+    end
+
+    gfx.setColor(palette.ice.mid:alpha(0.7))
+    ice.speckle(canvas.single_distance, canvas.noise.crack, 0.07)
+
+    for _, ib in ipairs(ice_borders) do
+        gfx.push()
+        gfx.translate(ib.x or 0, ib.y or 0)
+        ice.border(
+            canvas.single_distance, canvas.noise.border,
+            ib.min_distance, ib.max_distance, ib.color
+        )
+        gfx.pop()
+    end
+
+    gfx.setColor(palette.ice.top:alpha(0.7))
+    ice.speckle(canvas.single_distance, canvas.noise.crack, 0.023)
+
+    --gfx.draw(canvas.noise.crack)
+
+    gfx.setStencilTest()
 end
+
 
 return scene
