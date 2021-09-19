@@ -38,7 +38,7 @@ function components.hook_charges(max_charges)
     local l = list()
 
     for i = 1, max_charges do
-        table.insert(l, nw.component.timer.create(3, 0))
+        table.insert(l, nw.component.timer.create(1, 0))
     end
 
     return l

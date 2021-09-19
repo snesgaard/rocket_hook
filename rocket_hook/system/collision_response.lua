@@ -25,6 +25,12 @@ function ground_monitor.is_on_ground(entity)
     return entity[on_ground_timer] and not entity[on_ground_timer]:done()
 end
 
+function ground_monitor.clear_ground(entity)
+    local timer = entity[on_ground_timer]
+    if not timer then return end
+    entity:remove(on_ground_timer)
+end
+
 function ground_monitor:update(dt)
     for _, entity in ipairs(self.pool) do
         if entity[on_ground_timer] then entity[on_ground_timer]:update(dt) end

@@ -35,10 +35,12 @@ function input_pressed_handlers.idle(entity, input)
     if input == "hook" and charge_index then
         h[charge_index]:reset()
         entity[rh.component.can_jump] = true
+        rh.system.collision_response.clear_ground(entity)
         rh.system.action.hook.hook(entity, get_input_direction())
         return true
     elseif input == "jump" and entity[rh.component.can_jump] then
         entity[rh.component.can_jump] = false
+        rh.system.collision_response.clear_ground(entity)
         rh.system.action.dodge.dodge(entity, get_input_direction())
         return true
     elseif input == "throw" then
@@ -110,6 +112,7 @@ function system:update(dt)
 
     List.foreach(self.pool, function(entity)
         local h = entity[rh.component.hook_charges]
+        if not rh.system.collision_response.is_on_ground(entity) then return end
         for _, t in ipairs(h) do
             if not t:done() then t:update(dt) end
         end
