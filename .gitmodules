@@ -1,3 +1,6 @@
 [submodule "nodeworks"]
 	path = nodeworks
 	url = git@github.com:snesgaard/nodeworks.git
+[submodule "lovedebug"]
+	path = lovedebug
+	url = https://github.com/flamendless/lovedebug

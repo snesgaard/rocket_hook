@@ -4,12 +4,10 @@ local nw = require "nodeworks"
 local components = rh.assemblage.camera():keys()
 local system = ecs.system(components:unpack())
 
-function system.track(camera_entity)
-    local parent = camera_entity[nw.component.parent]
-
+function system.track(camera_entity, tracked_entity)
     local slack = camera_entity[rh.component.camera_slack]
     local pos = camera_entity[nw.component.position]
-    local parent_pos = parent[nw.component.position]
+    local parent_pos = tracked_entity[nw.component.position]
 
     local diff = parent_pos - pos
 
@@ -39,6 +37,14 @@ function system.transform(camera_entity)
     gfx.scale(scale.x, scale.y)
     gfx.translate(-pos.x, -pos.y)
     return system
+end
+
+function system.translation_scale(camera_entity)
+    local screen = vec2(gfx.getWidth(), gfx.getHeight())
+    local pos = camera_entity[nw.component.position]
+    local scale = camera_entity[rh.component.scale]
+    local offset = (screen * 0.5 / scale - pos)
+    return offset.x, offset.y, scale.x, scale.y
 end
 
 return system

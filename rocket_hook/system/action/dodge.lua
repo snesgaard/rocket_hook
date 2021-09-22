@@ -62,8 +62,10 @@ function dodge_system:update(dt)
     List.foreach(self.pool, function(entity)
         local travel_tween = entity[dodge_component][player_travel_tween]
         if not travel_tween:is_done() then
+            local prev_position = travel_tween:update(0)
             local next_position = travel_tween:update(dt)
-            systems.collision.move_to(entity, next_position:unpack())
+            local relative = next_position - prev_position
+            systems.collision.move(entity, relative:unpack())
             return
         end
 

@@ -1,6 +1,7 @@
 local br = require "burning_rope"
 local nw = require "nodeworks"
 local rh = require "rocket_hook"
+require "lovedebug.lovedebug"
 
 local scene = {}
 
@@ -90,6 +91,26 @@ function nw.system.collision.default_move_filter(item, other)
     return "cross"
 end
 
+local function instantiate_map(map, world, bump_world)
+    for _, layer in ipairs(map.layers) do
+        for y, row in ipairs(layer.data) do
+            for x, tile in pairs(row) do
+                local position = vec2(map:convertTileToPixel(x - 1, y - 1))
+                if tile.properties.one_way then
+                    ecs.entity(world)
+                        :add(
+                            nw.component.hitbox,
+                            0, 0, tile.width, tile.height
+                        )
+                        :add(nw.component.position, position.x, position.y)
+                        :add(nw.component.oneway)
+                        :add(nw.component.bump_world, bump_world)
+                end
+            end
+        end
+    end
+end
+
 function scene.load()
     world = ecs.world(all_systems)
     bump_world = bump.newWorld()
@@ -163,6 +184,9 @@ function scene.load()
 
     camera = ecs.entity(world)
         :assemble(rh.assemblage.camera, gibbles)
+
+    map = sti("art/maps/build/test.lua")
+    instantiate_map(map, world, bump_world)
 end
 
 function scene.update(dt)
@@ -181,6 +205,7 @@ function scene.draw()
     --gfx.scale(2, 2)
     rh.system.camera.track(camera).transform(camera)
     world("draw")
+    map.layers.geometry:draw()
     gfx.origin()
     world("gui")
 end

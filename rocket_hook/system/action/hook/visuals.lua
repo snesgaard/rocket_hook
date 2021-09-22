@@ -1,3 +1,4 @@
+local nw = require "nodeworks"
 local hook_folder = (...):match("(.-)[^%.]+$")
 local hook_components = require(hook_folder .. "components")
 

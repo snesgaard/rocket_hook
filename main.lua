@@ -1,4 +1,4 @@
-local scene = require "scenes.freeze"
+local scene = require "scenes.tiled_load"
 
 function love.load()
     if scene.load then scene.load() end

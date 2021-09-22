@@ -44,7 +44,12 @@ end
 
 function hook_components.jet(world, dir, mirror)
     local jet = ecs.entity(world)
-        :add(components.sprite, {[components.draw_args] = {0, 0, 0, 1, 1}})
+        :add(
+            components.sprite,
+            {
+                [components.draw_args] = {0, 0, 0, 1, 1},
+            }
+        )
         :add(components.animation_state)
         :add(
             components.animation_map,
@@ -56,6 +61,7 @@ function hook_components.jet(world, dir, mirror)
             }
         )
         :add(components.mirror, mirror)
+        :add(components.hidden)
 
     systems.animation.play(jet, constants.jet_from_direction(dir))
 
