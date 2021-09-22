@@ -1,4 +1,4 @@
-local scene = require "scenes.tiled_load"
+local scene = require "scenes.burning_rope"
 
 function love.load()
     if scene.load then scene.load() end
