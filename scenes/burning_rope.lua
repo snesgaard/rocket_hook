@@ -182,7 +182,6 @@ function scene.draw()
     --gfx.scale(2, 2)
     rh.system.camera.track(camera).transform(camera)
     world("draw")
-    map.layers.geometry:draw()
     gfx.origin()
     world("gui")
 end
