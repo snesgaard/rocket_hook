@@ -2,7 +2,6 @@ local nw = require "nodeworks"
 local rh = require "rocket_hook"
 local tiled = require "tiled"
 local common_systems = require "common_systems"
-local platform_loader = require "tiled.platform_loader"
 require "lovedebug.lovedebug"
 
 function nw.system.collision.default_move_filter(item, other)
