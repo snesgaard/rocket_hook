@@ -5,8 +5,7 @@ local constants = require(... .. ".constants")
 local system = ecs.system.from_function(
     function(entity)
         return {
-            entities = entity:has(components.action, components.bump_world
-                and components.position)
+            entities = entity:has(components.action, components.bump_world, components.position, components.hook)
                 and entity[components.action]:type() == "hook",
             smoke = entity:has(hook_components.smoke)
         }
@@ -18,6 +17,7 @@ function system.hook(entity, dir)
         dir = vec2(entity[components.mirror] and -1 or 1, 0)
     end
     entity:update(components.action, "hook", dir)
+    system.init_hook(entity)
 end
 
 function system:on_entity_added(entity, pool)
@@ -139,8 +139,6 @@ end
 
 function system.update(self, dt)
     List.foreach(self.entities, function(entity)
-         system.init_hook(entity)
-
         if system.update_hook(self, entity, dt) then return end
 
         system.init_drag(entity)

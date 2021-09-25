@@ -1,6 +1,7 @@
 local br = require "burning_rope"
 local nw = require "nodeworks"
 local rh = require "rocket_hook"
+require "lovedebug.lovedebug"
 
 local scene = {}
 
@@ -179,7 +180,7 @@ end
 
 function scene.draw()
     --gfx.scale(2, 2)
-    rh.system.camera.track(camera).transform(camera)
+    rh.system.camera.track(camera, gibbles).transform(camera)
     world("draw")
     gfx.origin()
     world("gui")

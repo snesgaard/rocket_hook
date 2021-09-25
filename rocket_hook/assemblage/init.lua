@@ -57,4 +57,9 @@ function assemblages.gibbles(x, y, bump_world)
     return ass + assemblages.player_motion
 end
 
-return assemblages
+
+local BASE = ...
+
+function assemblages.__index(t, k) return require(BASE .. "." .. k) end
+
+return setmetatable(assemblages, assemblages)
