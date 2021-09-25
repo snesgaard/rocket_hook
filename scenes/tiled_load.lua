@@ -37,6 +37,7 @@ local scene = {}
 
 local function object_load(map, layer, world, bump_world)
     layer.visible = false
+    --[[
     for _, obj in ipairs(layer.objects) do
         if obj.type == "player_spawn" then
             gibbles = ecs.entity(world, "gibbles")
@@ -45,7 +46,7 @@ local function object_load(map, layer, world, bump_world)
                 :assemble(rh.assemblage.camera)
         end
     end
-
+    ]]--
 
 end
 
@@ -56,6 +57,21 @@ function scene.load()
     map = sti("art/maps/build/test.lua")
 
     tiled.load_world(map, tiled.tile_load, object_load, world, bump_world)
+
+    map.camera = ecs.entity(world):assemble(rh.assemblage.camera)
+
+    local spawn_locations = tiled.find_object(
+        map, function(obj) return obj.type == "player_spawn" end
+    )
+
+    if #spawn_locations == 0 then
+        errorf("Didn't find any player_spawn points")
+    end
+
+    local location = spawn_locations[1]
+
+    map.gibbles = ecs.entity(world, "gibbles")
+        :assemble(rh.assemblage.gibbles, location.x, location.y, bump_world)
 
     --gibbles = ecs.entity(world, "gibbles")
         --:assemble(rh.assemblage.gibbles, 200, 0, bump_world)
@@ -74,8 +90,8 @@ end
 
 function scene.draw()
     local tx, ty, sx, sy = rh.system.camera
-        .track(camera, gibbles)
-        .translation_scale(camera)
+        .track(map.camera, map.gibbles)
+        .translation_scale(map.camera)
     map:draw(tx, ty, 2, 2)
     gfx.scale(2, 2)
     gfx.translate(tx, ty)
