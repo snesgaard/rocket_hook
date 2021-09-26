@@ -20,7 +20,6 @@ end
 
 function system:on_moved(entity, dx, dy)
     if not self.pool[entity] then return end
-
     for other, _ in pairs(entity[rh.component.moving_platform]) do
         if other[nw.component.velocity] then
             nw.system.collision.move(other, dx, dy)

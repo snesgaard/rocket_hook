@@ -67,9 +67,11 @@ local all_systems =
 
 
 function nw.system.collision.default_move_filter(item, other)
-    local f = item[rh.component.move_filter] or function() end
-    local t = f(item, other)
-    if t then return t end
+    local f = item[rh.component.move_filter]
+    if f then
+        local t = f(item, other)
+        if t then return t end
+    end
 
     local function is_solid(item, other)
         if item[components.body] then return true end
