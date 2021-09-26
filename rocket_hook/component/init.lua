@@ -50,4 +50,10 @@ function components.camera_slack(x, y) return vec2(x, y) end
 
 function components.scale(x, y) return vec2(x, y) end
 
+function components.patrol(path, speed)
+    return {
+        path=path, speed=speed
+    }
+end
+
 return setmetatable(components, components)

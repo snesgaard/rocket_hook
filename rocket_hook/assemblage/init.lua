@@ -27,7 +27,7 @@ function assemblages.gibbles(x, y, bump_world)
         [components.hitbox] = {-5, -30, 10, 60},
         [components.body] = {},
         [components.bump_world] = {bump_world},
-        [components.position] = {x, y},
+        [components.position] = {x, y - 30},
         [rh.component.player_control] = {},
         [nw.component.sprite] = {},
         [nw.component.mirror] = {},
