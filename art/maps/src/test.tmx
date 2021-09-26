@@ -282,7 +282,7 @@
   <object id="2" name="motion_platform" type="platform" x="940" y="-40" width="80" height="16">
    <properties>
     <property name="path" type="object" value="4"/>
-    <property name="patrol_time" type="float" value="2.5"/>
+    <property name="patrol_time" type="float" value="5"/>
    </properties>
   </object>
   <object id="4" x="1296" y="-40">

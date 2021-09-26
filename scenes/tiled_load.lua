@@ -17,7 +17,7 @@ function nw.system.collision.default_move_filter(item, other)
             local other_hb = nw.system.collision.get_world_hitbox(other)
 
             -- Add some slack to account for floating point shenanigans
-            if item_hb.y + 1e-10 >= other_hb.y + other_hb.h then
+            if item_hb.y + 1e-15 >= other_hb.y + other_hb.h then
                 return true
             end
         end
@@ -105,7 +105,7 @@ function scene.load()
         map, function(obj) return obj.type == "player_spawn" end
     )
 
-    local location_name = "spawn_at_platform"
+    local location_name = "platform_debug"
     local location = spawn_locations:find(function(obj) return obj.name == location_name end)
 
     if not location then
