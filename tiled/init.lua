@@ -31,7 +31,8 @@ function tiled.instantiate_tile(map, layer, tile, x, y, world, bump_world)
     local position = vec2(map:convertTileToPixel(x - 1, y - 1))
         + vec2(layer.offsetx, layer.offsety)
 
-    local entity = ecs.entity(world)
+    local name = string.format("tile x = %i, y = %i", x, y)
+    local entity = ecs.entity(world, name)
         :add(nw.component.position, position:unpack())
         :add(nw.component.hitbox, 0, 0, tile.width, tile.height)
 
@@ -88,7 +89,7 @@ function tiled.tile_load(map, layer, world, bump)
 end
 
 function tiled.find_object(map, search_function)
-    local objects = {}
+    local objects = list()
 
     -- Then pass all object layers
     for _, layer in ipairs(map.layers) do
