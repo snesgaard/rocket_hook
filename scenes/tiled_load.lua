@@ -105,7 +105,7 @@ function scene.load()
         map, function(obj) return obj.type == "player_spawn" end
     )
 
-    local location_name = "platform_debug"
+    local location_name = "spawnA"
     local location = spawn_locations:find(function(obj) return obj.name == location_name end)
 
     if not location then
