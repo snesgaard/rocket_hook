@@ -50,6 +50,16 @@ function system:on_contact_begin(item, other, colinfo)
     below[rh.component.moving_platform][above] = true
 end
 
+function system:on_contact_changed(item, other, colinfo)
+    if colinfo.type ~= "cross" then return end
+    local above, below = get_above_entity(
+        item, colinfo.itemRect, other, colinfo.otherRect
+    )
+    -- Break thether, if any
+    if self.pool[item] then item[rh.component.moving_platform][other] = nil end
+    if self.pool[other] then other[rh.component.moving_platform][item] = nil end
+end
+
 function system:on_contact_end(item, other)
     -- Break thether, if any
     if self.pool[item] then item[rh.component.moving_platform][other] = nil end

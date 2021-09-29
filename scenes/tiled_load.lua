@@ -34,8 +34,6 @@ function nw.system.collision.default_move_filter(item, other)
 end
 
 
-local all_systems = common_systems.logic + common_systems.action
-    + common_systems.decision + common_systems.motion + common_systems.render
 
 local scene = {}
 
@@ -91,8 +89,13 @@ function platform_draw:draw()
     List.foreach(self.pool, draw_box)
 end
 
+
+local all_systems = common_systems.logic + common_systems.action
+    + common_systems.decision + list(rh.system.platform_patrol)
+    + common_systems.motion + list(platform_draw) + common_systems.render
+
 function scene.load()
-    world = ecs.world(all_systems + list(rh.system.platform_patrol, platform_draw))
+    world = ecs.world(all_systems)
     bump_world = bump.newWorld()
 
     map = sti("art/maps/build/test.lua")
@@ -105,7 +108,7 @@ function scene.load()
         map, function(obj) return obj.type == "player_spawn" end
     )
 
-    local location_name = "spawnA"
+    local location_name = "platform_debug"
     local location = spawn_locations:find(function(obj) return obj.name == location_name end)
 
     if not location then

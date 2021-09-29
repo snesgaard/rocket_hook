@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<map version="1.5" tiledversion="1.7.2" orientation="orthogonal" renderorder="right-down" width="35" height="35" tilewidth="16" tileheight="16" infinite="1" nextlayerid="3" nextobjectid="9">
+<map version="1.5" tiledversion="1.7.2" orientation="orthogonal" renderorder="right-down" width="35" height="35" tilewidth="16" tileheight="16" infinite="1" nextlayerid="3" nextobjectid="11">
  <tileset firstgid="1" source="../tileset/rgb_test.tsx"/>
  <layer id="1" name="Tile Layer 1" width="35" height="35">
   <data encoding="csv">
@@ -286,13 +286,22 @@
    </properties>
   </object>
   <object id="4" x="1296" y="-40">
-   <polyline points="-64,-120 -304,8"/>
+   <polyline points="-52,8 -304,8"/>
   </object>
-  <object id="5" name="platform_debug" type="player_spawn" x="1244" y="-176">
+  <object id="5" name="platform_debug" type="player_spawn" x="1212" y="-76">
    <point/>
   </object>
   <object id="8" name="spawn_at_platform" type="player_spawn" x="888" y="-52">
    <point/>
+  </object>
+  <object id="9" name="motion_platform" type="platform" x="1188" y="-64" width="80" height="16">
+   <properties>
+    <property name="path" type="object" value="10"/>
+    <property name="patrol_time" type="float" value="5"/>
+   </properties>
+  </object>
+  <object id="10" x="1232" y="-56">
+   <polyline points="0,0 -256,0"/>
   </object>
  </objectgroup>
 </map>
