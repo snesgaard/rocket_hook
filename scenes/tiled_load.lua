@@ -148,7 +148,10 @@ end
 
 function scene.keypressed(key, ...)
     world("keypressed", key, ...)
-    if key == "c" then rope:destroy() end
+end
+
+function scene.keyreleased(key, ...)
+    world("keyreleased", key, ...)
 end
 
 return scene

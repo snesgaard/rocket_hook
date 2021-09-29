@@ -20,6 +20,16 @@ function system.hook(entity, dir)
     system.init_hook(entity)
 end
 
+function system.hook_destination(entity, dir)
+    local animation_key = constants.hook_animation_from_direction(dir)
+    local p = entity[components.position]
+    local offset_slice = systems.animation.get_base_slice(
+        entity, "hook", "body", animation_key
+    ) or spatial()
+    local offset_center = offset_slice:center()
+    return p + offset_center + dir * constants.hook_distance
+end
+
 function system:on_entity_added(entity, pool)
     if pool == self.entities then
         -- Deactivate velocity as we want to dictate how it goes

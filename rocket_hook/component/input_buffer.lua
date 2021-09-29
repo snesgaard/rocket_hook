@@ -1,8 +1,8 @@
 local input_buffer = {}
 input_buffer.__index = input_buffer
 
-function input_buffer:add(key)
-    local entry = {key=key, time=self.__duration}
+function input_buffer:add(key, state)
+    local entry = {key=key, time=self.__duration, state=state}
     table.insert(self, entry)
 end
 
@@ -21,7 +21,7 @@ function input_buffer:foreach(fn, ...)
     local to_remove = {}
 
     for index, entry in ipairs(self) do
-        if fn(entry.key, ...) then
+        if fn(entry.key, entry.state, ...) then
             table.insert(to_remove, index)
         end
     end

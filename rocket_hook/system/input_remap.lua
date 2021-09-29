@@ -13,6 +13,7 @@ end
 local input_from_key = {
     lshift = "hook",
     space = "jump",
+    b = "aim",
     left = "left",
     right = "right",
     up = "up",

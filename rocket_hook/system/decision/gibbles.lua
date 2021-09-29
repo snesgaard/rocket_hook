@@ -46,28 +46,55 @@ function input_pressed_handlers.idle(entity, input)
     elseif input == "throw" then
         rh.system.action.throw.throw(entity, get_input_direction())
         return true
+    elseif input == "aim" then
+        entity:update(components.action, "hook_aim")
+        return true
     end
 end
 
 
-local function handle_input(input, entity)
+function input_pressed_handlers.hook_aim(entity, input)
+    print("nope1")
+end
+
+
+local input_released_handlers = {}
+
+
+function input_released_handlers.hook_aim(entity, input)
+    print("nope2")
+end
+
+
+local function handle_input(input, state, entity)
     local action = entity[components.action]:type()
-    local f = input_pressed_handlers[action]
-    if f then return f(entity, input) end
+    if state == "pressed" then
+        local f = input_pressed_handlers[action]
+        if f then return f(entity, input) end
+    elseif state == "released" then
+        local f = input_released_handlers[action]
+        if f then return f(entity, input) end
+    end
 end
 
 
 function system:input_pressed(input)
     for _, entity in ipairs(self.pool) do
-        if not handle_input(input, entity) then
+        if not handle_input(input, "pressed", entity) then
             local buffer = entity[rh.component.input_buffer]
-            buffer:add(input)
+            buffer:add(input, "pressed")
         end
     end
 end
 
 
-function system:input_released(key)
+function system:input_released(input)
+    for _, entity in ipairs(self.pool) do
+        if not handle_input(input, "released", entity) then
+            local buffer = entity[rh.component.input_buffer]
+            buffer:add(input, "released")
+        end
+    end
 end
 
 
@@ -123,6 +150,14 @@ function system:update(dt)
         buffer:update(dt)
         buffer:foreach(handle_input, entity)
     end)
+end
+
+function system:draw()
+    for _, entity in ipairs(self.pool) do
+        gfx.setColor(1, 1, 1)
+        local hook_pos = rh.system.action.hook.hook_destination(entity, vec2(0, -1))
+        gfx.circle("fill", hook_pos.x, hook_pos.y, 5)
+    end
 end
 
 local icon = get_atlas("art/characters"):get_frame("rocket_icon")
