@@ -90,16 +90,7 @@ function system.update_hook(self, entity, dt)
     local next_pos = init_pos + d * dir + o
     local x, y, cols = systems.collision.move_to(hook, next_pos:unpack())
 
-    local function did_we_collide()
-        for _, c in ipairs(cols) do
-            if c.other[components.body] and not c.other[components.oneway] and c.other ~= entity then
-                return true
-            end
-        end
-        return false
-    end
-
-    if did_we_collide() or tween:is_done() then
+    if tween:is_done() then
         entity:add(hook_components.drag_tween, tween:value())
         hook:add(hook_components.jet, entity.world, dir, entity[components.mirror])
         tween:pause()
@@ -114,6 +105,16 @@ function system.init_drag(entity)
     systems.animation.play(entity, animation_key)
 end
 
+local function did_we_collide_with_solid(cols)
+    for _, c in ipairs(cols) do
+        if c.type == "slide" then
+            return true
+        end
+    end
+
+    return false
+end
+
 function system.update_drag(self, entity, dt)
     local tween = entity[hook_components.drag_tween]
     local hook = entity[hook_components.hook]
@@ -125,7 +126,11 @@ function system.update_drag(self, entity, dt)
     local d = tween:update(dt)
     local next_pos = init_pos + dir * d
 
-    systems.collision.move_to(entity, next_pos:unpack())
+    local _, _, cols = systems.collision.move_to(entity, next_pos:unpack())
+
+    if did_we_collide_with_solid(cols) then
+        tween:complete()
+    end
 
     if tween:is_done() then
         local velocity = tween:derivative(tween:get_duration()) * dir
