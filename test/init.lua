@@ -5,3 +5,4 @@ T = nw.third.knife.test
 
 require "test.test_camera"
 require "test.test_collision_response"
+require "test.test_draw_sprite"
