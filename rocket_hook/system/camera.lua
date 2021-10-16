@@ -2,7 +2,7 @@ local rh = require "rocket_hook"
 local nw = require "nodeworks"
 
 local components = rh.assemblage.camera():keys()
-local system = ecs.system(components:unpack())
+local system = nw.ecs.system(components:unpack())
 
 function system.track(camera_entity, tracked_entity)
     local slack = camera_entity[rh.component.camera_slack]

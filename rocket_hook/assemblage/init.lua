@@ -9,14 +9,10 @@ assemblages.player_motion = dict{
     [nw.component.drag] = {0.5}
 }
 
-function assemblages.camera(entity_to_track)
-    local pos = vec2()
-    if entity_to_track then
-        pos = entity_to_track[nw.component.position] or vec2()
-    end
+function assemblages.camera(pos)
+    local pos = pos or vec2()
     return dict{
         [nw.component.position] = {pos.x, pos.y},
-        [nw.component.parent] = {entity_to_track},
         [rh.component.camera_slack] = {25, 25},
         [rh.component.scale] = {2, 2},
     }

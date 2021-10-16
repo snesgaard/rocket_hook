@@ -1,6 +1,7 @@
 local rh = require "rocket_hook"
+local nw = require "nodeworks"
 
-local system = ecs.system(
+local system = nw.ecs.system(
     rh.component.player_control, components.action, components.hook_charges,
     rh.component.can_jump, rh.component.input_buffer
 )

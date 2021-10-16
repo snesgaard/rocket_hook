@@ -23,11 +23,6 @@ end
 
 function components.brittle() return true end
 
-local BASE = ...
-
-
-function components.__index(t, k) return require(BASE .. "." .. k) end
-
 function components.moving_platform() return {} end
 
 function components.move_filter(f) return f end
@@ -55,5 +50,9 @@ function components.patrol(path, speed)
         path=path, speed=speed
     }
 end
+
+local BASE = ...
+
+function components.__index(t, k) return require(BASE .. "." .. k) end
 
 return setmetatable(components, components)

@@ -1,5 +1,6 @@
 local br = require "burning_rope"
 local rh = require "rocket_hook"
+local nw = require "nodeworks"
 
 local function box_component(x, y, w, h)
     return spatial(x, y, w, h)
@@ -12,7 +13,7 @@ local function entity_filter(entity)
     }
 end
 
-local system = ecs.system.from_function(entity_filter)
+local system = nw.ecs.system.from_function(entity_filter)
 
 function system.throw(entity, dir)
     entity:update(components.action, "throw", dir)
@@ -57,7 +58,7 @@ system["animation_event:throw"] = function(self, entity, frame)
     --    :add(box_component, slice:unpack())
     local sx = entity[components.mirror] and -1 or 1
 
-    ecs.entity(self.world)
+    nw.ecs.entity(self.world)
         :add(components.hitbox, slice:relative(slice):unpack())
         :add(components.bump_world, entity[components.bump_world])
         :add(components.position, slice:center())

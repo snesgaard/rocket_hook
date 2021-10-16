@@ -41,7 +41,7 @@ local function entity_filter(entity)
     }
 end
 
-local burn_system = ecs.system.from_function(entity_filter)
+local burn_system = nw.ecs.system.from_function(entity_filter)
 
 function burn_system:on_entity_added(entity, pool)
     if pool == self.sfx then

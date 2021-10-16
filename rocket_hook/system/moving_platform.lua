@@ -1,7 +1,7 @@
 local rh = require "rocket_hook"
 local nw = require "nodeworks"
 
-local system = ecs.system(rh.component.moving_platform, nw.component.position)
+local system = nw.ecs.system(rh.component.moving_platform, nw.component.position)
 
 function system.move_filter(item, other)
     if item[rh.component.moving_platform] then
