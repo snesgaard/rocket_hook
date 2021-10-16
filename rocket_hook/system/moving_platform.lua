@@ -1,7 +1,7 @@
 local rh = require "rocket_hook"
 local nw = require "nodeworks"
 
-local system = nw.ecs.system(rh.component.moving_platform, nw.component.position)
+local system = nw.ecs.system(rh.component.moving_platform)
 
 function system.move_filter(item, other)
     if item[rh.component.moving_platform] then
@@ -64,6 +64,12 @@ function system:on_contact_end(item, other)
     -- Break thether, if any
     if self.pool[item] then item[rh.component.moving_platform][other] = nil end
     if self.pool[other] then other[rh.component.moving_platform][item] = nil end
+end
+
+function system.is_bound(platform, entity)
+    local mp = platform % rh.component.moving_platform
+    if not mp then return false end
+    return mp[entity]
 end
 
 return system
