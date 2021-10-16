@@ -1,11 +1,14 @@
 local rh = require "rocket_hook"
 local nw = require "nodeworks"
 
-local function on_ground_timer()
-    return components.timer.create(0.1)
-end
 
 local ground_monitor = nw.ecs.system(rh.component.player_control)
+
+ground_monitor.ON_GROUND_TIMEOUT = 0.1
+
+local function on_ground_timer()
+    return nw.component.timer.create(ground_monitor.ON_GROUND_TIMEOUT)
+end
 
 function ground_monitor:on_collision(collisions)
     List.foreach(collisions, function(info)
