@@ -1,58 +1,60 @@
+local nw = require "nodeworks"
+
 local hook_folder = (...):match("(.-)[^%.]+$")
 local constants = require(hook_folder .. "constants")
 
-local hook_components = {}
+local hook_component = {}
 
-function hook_components.smoke() return true end
+function hook_component.smoke() return true end
 
-function hook_components.direction(dir) return dir:normalize() end
+function hook_component.direction(dir) return dir:normalize() end
 
-function hook_components.hook_tween()
-    return components.tween(0, constants.hook_distance, constants.hook_time)
+function hook_component.hook_tween()
+    return nw.component.tween(0, constants.hook_distance, constants.hook_time)
         :ease(constants.rocket_ease)
 end
 
-function hook_components.drag_tween(length)
-    return components.tween(0, length, length / constants.player_drag_speed)
+function hook_component.drag_tween(length)
+    return nw.component.tween(0, length, length / constants.player_drag_speed)
         :ease(constants.player_ease)
 end
 
-function hook_components.hook_offset(offset)
+function hook_component.hook_offset(offset)
     return offset
 end
 
-function hook_components.initial_position(pos) return vec2(pos:unpack()) end
+function hook_component.initial_position(pos) return vec2(pos:unpack()) end
 
-function hook_components.hook(parent, dir)
-    local entity = ecs.entity(parent.world)
+function hook_component.hook(parent, dir)
+    local entity = nw.ecs.entity(parent.world)
 
     local animation_key = constants.hook_animation_from_direction(dir)
-    local offset_slice = systems.animation.get_base_slice(
+    local offset_slice = nw.system.animation.get_base_slice(
         parent, "hook", "body", animation_key
     ) or spatial()
 
     return entity
-        :add(hook_components.direction, dir)
-        :add(hook_components.hook_tween)
-        :add(hook_components.hook_offset, offset_slice:center())
-        :add(components.parent, parent)
-        :add(hook_components.initial_position, parent[components.position])
-        :add(components.position, entity[hook_components.initial_position] + entity[hook_components.hook_offset])
-        :add(components.bump_world, parent[components.bump_world])
-        :add(components.hitbox, -5, -5, 10, 10)
+        :add(hook_component.direction, dir)
+        :add(hook_component.hook_tween)
+        :add(hook_component.hook_offset, offset_slice:center())
+        :add(nw.component.parent, parent)
+        :add(hook_component.initial_position, parent[nw.component.position])
+        :add(nw.component.position, entity[hook_component.initial_position] + entity[hook_component.hook_offset])
+        :add(nw.component.bump_world, parent[nw.component.bump_world])
+        :add(nw.component.hitbox, -5, -5, 10, 10)
 end
 
-function hook_components.jet(world, dir, mirror)
-    local jet = ecs.entity(world)
+function hook_component.jet(world, dir, mirror)
+    local jet = nw.ecs.entity(world)
         :add(
-            components.sprite,
+            nw.component.sprite,
             {
-                [components.draw_args] = {0, 0, 0, 1, 1},
+                [nw.component.draw_args] = {0, 0, 0, 1, 1},
             }
         )
-        :add(components.animation_state)
+        :add(nw.component.animation_state)
         :add(
-            components.animation_map,
+            nw.component.animation_map,
             get_atlas("art/characters"),
             {
                 jet_v="rocket_jet_ball/jet_v_huge",
@@ -60,12 +62,12 @@ function hook_components.jet(world, dir, mirror)
                 jet_hv="rocket_jet_ball/jet_hv_huge",
             }
         )
-        :add(components.mirror, mirror)
-        :add(components.hidden)
+        :add(nw.component.mirror, mirror)
+        :add(nw.component.hidden)
 
-    systems.animation.play(jet, constants.jet_from_direction(dir))
+    nw.system.animation.play(jet, constants.jet_from_direction(dir))
 
     return jet
 end
 
-return hook_components
+return hook_component

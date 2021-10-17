@@ -1,6 +1,6 @@
 local nw = require "nodeworks"
 local hook_folder = (...):match("(.-)[^%.]+$")
-local hook_components = require(hook_folder .. "components")
+local hook_component = require(hook_folder .. "components")
 
 local visuals = {}
 
@@ -77,11 +77,11 @@ function visuals.draw_chain_hv(start_pos, end_pos)
 end
 
 function visuals.create_smoke_puff(world, x, y)
-    return ecs.entity(world)
-        :add(components.sprite)
-        :add(components.animation_state)
+    return nw.ecs.entity(world)
+        :add(nw.component.sprite)
+        :add(nw.component.animation_state)
         :add(
-            components.animation_map,
+            nw.component.animation_map,
             get_atlas("art/characters"),
             {
                 smoke_v="smoke/smoke_v",
@@ -89,8 +89,8 @@ function visuals.create_smoke_puff(world, x, y)
                 smoke_hv="smoke/smoke_hv"
             }
         )
-        :add(components.position, x or 0, y or 0)
-        :add(hook_components.smoke)
+        :add(nw.component.position, x or 0, y or 0)
+        :add(hook_component.smoke)
 end
 
 return visuals
