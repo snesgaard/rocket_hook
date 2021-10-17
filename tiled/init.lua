@@ -32,7 +32,7 @@ function tiled.instantiate_tile(map, layer, tile, x, y, world, bump_world)
         + vec2(layer.offsetx, layer.offsety)
 
     local name = string.format("tile x = %i, y = %i", x, y)
-    local entity = ecs.entity(world, name)
+    local entity = nw.ecs.entity(world, name)
         :add(nw.component.position, position:unpack())
         :add(nw.component.hitbox, 0, 0, tile.width, tile.height)
 

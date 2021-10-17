@@ -1,3 +1,5 @@
+local nw = require "nodeworks"
+
 local function reflect_input_map(map)
     local reflection = {}
 
@@ -19,11 +21,12 @@ local input_from_key = {
     down = "down",
     a = "throw"
 }
+
 local keys_from_input = reflect_input_map(input_from_key)
 
+local player_input = nw.ecs.system()
 
-
-local player_input = ecs.system()
+player_input.INPUT_FROM_KEY = input_from_key
 
 local function get_direction()
     local dir = vec2()

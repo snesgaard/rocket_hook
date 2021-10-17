@@ -1,7 +1,8 @@
 local rh = require "rocket_hook"
+local nw = require "nodeworks"
 
-local system = ecs.system(
-    rh.component.player_control, components.action, components.hook_charges,
+local system = nw.ecs.system(
+    rh.component.player_control, nw.component.action, nw.component.hook_charges,
     rh.component.can_jump, rh.component.input_buffer
 )
 
@@ -51,7 +52,7 @@ end
 
 
 local function handle_input(input, entity)
-    local action = entity[components.action]:type()
+    local action = entity[nw.component.action]:type()
     local f = input_pressed_handlers[action]
     if f then return f(entity, input) end
 end
@@ -80,32 +81,32 @@ end
 
 function system:update(dt)
     List.foreach(self.pool, function(entity)
-        if entity[components.action]:type() ~= "idle" then return end
+        if entity[nw.component.action]:type() ~= "idle" then return end
 
-        local v = entity:ensure(components.velocity)
+        local v = entity:ensure(nw.component.velocity)
 
 
         if rh.system.collision_response.is_on_ground(entity) then
             local dir = get_input_direction()
             local speed = 200 * dir.x
-            entity:update(components.velocity, speed, v.y)
+            entity:update(nw.component.velocity, speed, v.y)
 
             if dir.x < 0 then
-                entity:update(components.mirror, true)
+                entity:update(nw.component.mirror, true)
             elseif dir.x > 0 then
-                entity:update(components.mirror, false)
+                entity:update(nw.component.mirror, false)
             end
 
             if speed == 0 then
-                systems.animation.play(entity, "idle")
+                nw.system.animation.play(entity, "idle")
             else
-                systems.animation.play(entity, "run")
+                nw.system.animation.play(entity, "run")
             end
         else
             if v.y < 0 then
-                systems.animation.play(entity, "ascend")
+                nw.system.animation.play(entity, "ascend")
             else
-                systems.animation.play(entity, "descend")
+                nw.system.animation.play(entity, "descend")
             end
         end
     end)

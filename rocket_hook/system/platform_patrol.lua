@@ -68,7 +68,7 @@ function component.patrol(path, cycle_time)
     for _, l in ipairs(lengths) do
         local t1 = t
         local t2 = t + cycle_time * l / total_length
-        table.insert(line_times, {t1, t2})
+        table.insert(line_times, dict{t1, t2})
         t = t2
     end
 
@@ -91,6 +91,17 @@ local system = nw.ecs.system(
     component.patrol, component.patrol_state, nw.component.position
 )
 
+local function condition_from_segments(segments, wrapped_time)
+    local condition = {}
+
+    for i, s in ipairs(segments) do
+        local lower_bound = i == 1 and -math.huge or s.t1
+        local upper_bound = i == #segments and math.huge or s.t2
+        condition[i] = lower_bound <= wrapped_time and wrapped_time < upper_bound
+    end
+
+    return condition
+end
 
 local function entity_update(entity, dt)
     local state = entity[component.patrol_state]
@@ -100,9 +111,8 @@ local function entity_update(entity, dt)
     local wrapped_time = wrap.bounce(next_time, 0, path.cycle_time)
     state.time = next_time
 
-    local conditions = path.segments:map(function(s)
-        return s.t1 <= wrapped_time and wrapped_time < s.t2
-    end)
+    local conditions = condition_from_segments(path.segments, wrapped_time)
+
     local func = path.segments:map(function(s)
         return function(t)
             return lerp(t, s.t1, s.p1, s.t2, s.p2)

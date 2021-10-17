@@ -10,9 +10,9 @@ function nw.system.collision.default_move_filter(item, other)
     if t then return t end
 
     local function is_solid(item, other)
-        if item[components.body] then return true end
+        if item[nw.component.body] then return true end
 
-        if item[components.oneway] then
+        if item[nw.component.oneway] then
             local item_hb = nw.system.collision.get_world_hitbox(item)
             local other_hb = nw.system.collision.get_world_hitbox(other)
 
@@ -43,7 +43,7 @@ local function object_load(map, layer, world, bump_world)
     for _, obj in ipairs(layer.objects) do
         if obj.type == "platform" then
             local w, h = obj.width, obj.height
-            local entity = ecs.entity(world, obj.name)
+            local entity = nw.ecs.entity(world, obj.name)
                 :add(nw.component.hitbox, -w / 2, -h  /2, w, h)
                 :add(nw.component.oneway)
                 :add(nw.component.position, obj.x, obj.y)
@@ -95,14 +95,14 @@ local all_systems = common_systems.logic + common_systems.action
     + common_systems.motion + list(platform_draw) + common_systems.render
 
 function scene.load()
-    world = ecs.world(all_systems)
-    bump_world = bump.newWorld()
+    world = nw.ecs.world(all_systems)
+    bump_world = nw.third.bump.newWorld()
 
-    map = sti("art/maps/build/test.lua")
+    map = nw.third.sti("art/maps/build/test.lua")
 
     tiled.load_world(map, tiled.tile_load, object_load, world, bump_world)
 
-    map.camera = ecs.entity(world):assemble(rh.assemblage.camera)
+    map.camera = nw.ecs.entity(world):assemble(rh.assemblage.camera)
 
     local spawn_locations = tiled.find_object(
         map, function(obj) return obj.type == "player_spawn" end
@@ -115,14 +115,14 @@ function scene.load()
         errorf("Could not find player_spawn with name %s", location_name)
     end
 
-    map.gibbles = ecs.entity(world, "gibbles")
+    map.gibbles = nw.ecs.entity(world, "gibbles")
         :assemble(rh.assemblage.gibbles, location.x, location.y, bump_world)
 
     --gibbles = ecs.entity(world, "gibbles")
         --:assemble(rh.assemblage.gibbles, 200, 0, bump_world)
     --instantiate_map(map, world, bump_world)
 
-    local e = ecs.entity()
+    local e = nw.ecs.entity()
         + {nw.component.position, 2, 3}
         + {nw.component.velocity, 300, 200}
 

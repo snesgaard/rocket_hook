@@ -3,8 +3,8 @@ local nw = require "nodeworks"
 local rh = require "rocket_hook"
 
 local logic_systems = list(
-    br.system.burn,
-    br.system.rope,
+    --br.system.burn,
+    --br.system.rope,
     nw.system.parenting
 )
 
@@ -21,7 +21,7 @@ local decision_systems = list(
 
 local motion_systems = list(
     nw.system.motion,
-    br.system.fixture,
+    --br.system.fixture,
     nw.system.collision,
     nw.system.collision_contact,
     rh.system.collision_response,

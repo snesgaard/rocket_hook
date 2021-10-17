@@ -9,14 +9,10 @@ assemblages.player_motion = dict{
     [nw.component.drag] = {0.5}
 }
 
-function assemblages.camera(entity_to_track)
-    local pos = vec2()
-    if entity_to_track then
-        pos = entity_to_track[nw.component.position] or vec2()
-    end
+function assemblages.camera(pos)
+    local pos = pos or vec2()
     return dict{
         [nw.component.position] = {pos.x, pos.y},
-        [nw.component.parent] = {entity_to_track},
         [rh.component.camera_slack] = {25, 25},
         [rh.component.scale] = {2, 2},
     }
@@ -24,10 +20,10 @@ end
 
 function assemblages.gibbles(x, y, bump_world)
     local ass = dict{
-        [components.hitbox] = {-5, -30, 10, 60},
-        [components.body] = {},
-        [components.bump_world] = {bump_world},
-        [components.position] = {x, y - 30},
+        [nw.component.hitbox] = {-5, -30, 10, 60},
+        [nw.component.body] = {},
+        [nw.component.bump_world] = {bump_world},
+        [nw.component.position] = {x, y - 30},
         [rh.component.player_control] = {},
         [nw.component.sprite] = {},
         [nw.component.mirror] = {},

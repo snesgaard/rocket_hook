@@ -1,6 +1,21 @@
-local scene = require "scenes.tiled_load"
+local nw = require "nodeworks"
+gfx.setDefaultFilter("nearest", "nearest")
 
-function love.load()
+local function load_scene(args)
+    local key = args[1]
+
+    if key == "test" then
+        require("test")
+        print("ALL TEST PASSED")
+        love.event.quit()
+        return
+    end
+
+    return require "scenes.tiled_load"
+end
+
+function love.load(args)
+    scene = load_scene(args) or {}
     if scene.load then scene.load() end
 end
 
