@@ -8,7 +8,7 @@ end
 
 local function entity_filter(entity)
     return {
-        pool = entity:has(components.action) and entity[components.action]:type() == "throw",
+        pool = entity:has(nw.component.action) and entity[nw.component.action]:type() == "throw",
         boxes = entity:has(box_component)
     }
 end
@@ -16,31 +16,31 @@ end
 local system = nw.ecs.system.from_function(entity_filter)
 
 function system.throw(entity, dir)
-    entity:update(components.action, "throw", dir)
+    entity:update(nw.component.action, "throw", dir)
 end
 
 function system:on_entity_added(entity, pool)
     if pool ~= self.pool then return end
-    entity:add(components.root_motion)
-    local dir = entity[components.action]:args()
+    entity:add(nw.component.root_motion)
+    local dir = entity[nw.component.action]:args()
 
     if dir.x > 0 then
-        entity:update(components.mirror, false)
+        entity:update(nw.component.mirror, false)
     elseif dir.x < 0 then
-        entity:update(components.mirror, true)
+        entity:update(nw.component.mirror, true)
     end
 
-    systems.animation.play(entity, "throw", {interrupt=true, once=true})
+    nw.system.animation.play(entity, "throw", {interrupt=true, once=true})
 end
 
 function system:on_entity_removed(entity)
-    entity:remove(components.root_motion)
+    entity:remove(nw.component.root_motion)
 end
 
 function system:on_animation_ended(entity, id)
     if not self.pool[entity] or id ~= "throw" then return end
 
-    entity:update(components.action, "idle")
+    entity:update(nw.component.action, "idle")
 end
 
 function system:draw()
@@ -51,19 +51,18 @@ function system:draw()
 end
 
 system["animation_event:throw"] = function(self, entity, frame)
-    local slice = systems.animation.transform_slice(
+    local slice = nw.system.animation.transform_slice(
         entity, frame:get_slice("throw", "body")
     )
-    --ecs.entity(self.world)
-    --    :add(box_component, slice:unpack())
-    local sx = entity[components.mirror] and -1 or 1
+
+    local sx = entity[nw.component.mirror] and -1 or 1
 
     nw.ecs.entity(self.world)
-        :add(components.hitbox, slice:relative(slice):unpack())
-        :add(components.bump_world, entity[components.bump_world])
-        :add(components.position, slice:center())
-        :add(components.velocity, sx * 200, -200)
-        :add(components.gravity, 0, 1000)
+        :add(nw.component.hitbox, slice:relative(slice):unpack())
+        :add(nw.component.bump_world, entity[nw.component.bump_world])
+        :add(nw.component.position, slice:center())
+        :add(nw.component.velocity, sx * 200, -200)
+        :add(nw.component.gravity, 0, 1000)
         :add(rh.component.brittle)
         :add(br.component.burning)
 end
