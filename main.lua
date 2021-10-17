@@ -15,7 +15,7 @@ local function load_scene(args)
 end
 
 function love.load(args)
-    local scene = load_scene(args) or {}
+    scene = load_scene(args) or {}
     if scene.load then scene.load() end
 end
 
