@@ -1,10 +1,6 @@
 local rh = require "rocket_hook"
 local nw = require "nodeworks"
 
-local system = nw.ecs.system(
-    rh.component.player_control, nw.component.action, nw.component.hook_charges,
-    rh.component.can_jump, rh.component.input_buffer
-)
 
 local function get_input_direction()
     local dir_from_input = {
@@ -26,10 +22,9 @@ local function get_input_direction()
 end
 
 
-local input_pressed_handlers = {}
+local idle = {}
 
-
-function input_pressed_handlers.idle(entity, input)
+function idle.input_pressed(entity, input)
     local h = entity[rh.component.hook_charges]
     local charge_index = List.argfind(h, function(t) return t:done() end)
 
@@ -50,10 +45,94 @@ function input_pressed_handlers.idle(entity, input)
     end
 end
 
+function idle.input(entity, input_buffer)
+    local hooks = entity % rh.component.hook_charges
+    local can_jump = entity % rh.component.can_jump
+    local on_ground = rh.system.collision_response.is_on_ground(entity)
+    local charge_index = List.argfind(hooks, function(t) return t:done() end)
+
+    if charge_index and input_buffer:is_pressed("hook") then
+
+    elseif can_jump and input_buffer:is_pressed("jump") then
+
+    elseif on_ground and input_buffer:is_pressed("throw") then
+
+    end
+end
+
+function idle.input(entity)
+    local input = rh.system.input_buffer
+    local can_jump = entity % rh.component.can_jump
+    local on_ground = rh.system.collision_response.is_on_ground(entity)
+    local charge_index = List.argfind(hooks, function(t) return t:done() end)
+
+    if charge_index and input.is_pressed(entity, "hook") then
+
+    elseif can_jump and input.is_pressed(entity, "jump") then
+
+    elseif on_ground and input.is_pressed(entity, "throw") then
+
+    end
+end
+
+function idle.update(entity, dt)
+    local v = entity:ensure(nw.component.velocity)
+
+    if rh.system.collision_response.is_on_ground(entity) then
+        local dir = get_input_direction()
+        local speed = 200 * dir.x
+        entity:update(nw.component.velocity, speed, v.y)
+
+        if dir.x < 0 then
+            entity:update(nw.component.mirror, true)
+        elseif dir.x > 0 then
+            entity:update(nw.component.mirror, false)
+        end
+
+        if speed == 0 then
+            nw.system.animation.play(entity, "idle")
+        else
+            nw.system.animation.play(entity, "run")
+        end
+    else
+        if v.y < 0 then
+            nw.system.animation.play(entity, "ascend")
+        else
+            nw.system.animation.play(entity, "descend")
+        end
+    end
+end
+
+local hook_aim = {}
+
+function hook_aim.input_pressed(entity, input)
+
+end
+
+function hook_aim.input_released(entity, input)
+
+end
+
+local states = {
+    idle = idle,
+    hook_aim = hook_aim
+}
+
+local function get_state_func(states, action, func_key)
+    local a = states[action]
+    if not a then return end
+    return a[func_key]
+end
+
+local system = nw.ecs.system(
+    rh.component.player_control, nw.component.action, nw.component.hook_charges,
+    rh.component.can_jump, rh.component.input_buffer
+)
 
 local function handle_input(input, entity)
-    local action = entity[nw.component.action]:type()
-    local f = input_pressed_handlers[action]
+    local f = get_state_func(
+        states, (entity % nw.component.action):type(), "input_pressed"
+    )
     if f then return f(entity, input) end
 end
 
@@ -69,6 +148,7 @@ end
 
 
 function system:input_released(key)
+
 end
 
 
@@ -81,34 +161,10 @@ end
 
 function system:update(dt)
     List.foreach(self.pool, function(entity)
-        if entity[nw.component.action]:type() ~= "idle" then return end
-
-        local v = entity:ensure(nw.component.velocity)
-
-
-        if rh.system.collision_response.is_on_ground(entity) then
-            local dir = get_input_direction()
-            local speed = 200 * dir.x
-            entity:update(nw.component.velocity, speed, v.y)
-
-            if dir.x < 0 then
-                entity:update(nw.component.mirror, true)
-            elseif dir.x > 0 then
-                entity:update(nw.component.mirror, false)
-            end
-
-            if speed == 0 then
-                nw.system.animation.play(entity, "idle")
-            else
-                nw.system.animation.play(entity, "run")
-            end
-        else
-            if v.y < 0 then
-                nw.system.animation.play(entity, "ascend")
-            else
-                nw.system.animation.play(entity, "descend")
-            end
-        end
+        local f = get_state_func(
+            states, (entity % nw.component.action):type(), "update"
+        )
+        if f then f(entity, dt) end
     end)
 
     List.foreach(self.pool, function(entity)
