@@ -1,164 +1,184 @@
 local nw = require "nodeworks"
 local rh = require "rocket_hook"
 
-local function create_input_event(input, event)
-    return {input=input, event=event, age=0}
+local function create_event(input, state)
+    return {state=state, age=0, input=input}
 end
 
 local function input_history(prev_history)
-    local history = {}
-
-    if not prev_history then return history end
-
-    for key, value in pairs(prev_history) do history[key] = value end
-
-    return history
+    return dict(prev_history or {})
 end
 
 local system = nw.ecs.system(rh.component.input_buffer)
 
-system.MAX_BUFFER_SIZE = 30
+-- UTILTIY
 
--- Private utilities
-local function add_to_history(input_event, history)
-    local prev_value = history[input_event.input] or 0
+local function is_pressed(event) return event.state == "pressed" end
 
-    if input_event.event == "pressed" then
-        history[input_event.input] = prev_value + 1
-    elseif input_event.event == "released" then
-        history[input_event.input] = prev_value - 1
+local function is_released(event) return event.state == "released" end
+
+local function history_value(prev_value, event)
+    prev_value = prev_value or 0
+    if is_pressed(event) then
+        return prev_value + 1
+    elseif is_released(event) then
+        return prev_value - 1
+    else
+        return prev_value
     end
 end
 
-local function add_to_buffer(entity, input, event)
-    local buffer = entity % rh.component.input_buffer
-    local history = entity:ensure(input_history)
-    table.insert(buffer, create_input_event(input, event))
+local function too_old(event, max_age) return event.age >= max_age end
 
-    while #buffer > system.MAX_BUFFER_SIZE do
-        local input_event = List.head(buffer)
-        table.remove(buffer, 1)
-        add_to_history(input_event, history)
-    end
+local function not_too_old(...) return not too_old(...) end
+
+local function add_to_history(history, input, event)
+    history[input] = history_value(history[input], event)
 end
 
+local function get_epoch(input, buffer)
+    local l = buffer[input]
 
--- EVENT CALLBACKS
+    if not l then
+        l = list()
+        buffer[input] = l
+    end
 
-system["update"] = function(self, dt)
-    for _, entity in ipairs(self.pool) do
-        local buffer = entity % rh.component.input_buffer
-        for _, input_event in ipairs(buffer) do
-            input_event.age = input_event.age + dt
+    return l
+end
+
+local function add_to_buffer(buffer, input, state)
+    table.insert(get_epoch(input, buffer), create_event(input, state))
+end
+
+local function update_buffer(buffer, dt)
+    for _, epoch in pairs(buffer) do
+        for _, event in ipairs(epoch) do
+            event.age = event.age + dt
         end
     end
 end
 
+local function pop(entity, max_age)
+    max_age = max_age or system.MAX_AGE
+
+    local buffer = entity % rh.component.input_buffer
+    local history = entity:ensure(input_history)
+
+    for input, epoch in pairs(buffer) do
+        -- First update history
+        for _, event in ipairs(epoch) do
+            if too_old(event, max_age) then
+                add_to_history(history, input, event)
+            end
+        end
+
+        -- Next remove events that are too old
+        buffer[input] = List.filter(epoch, not_too_old, max_age)
+    end
+end
+
+system.MAX_AGE = 0.2
+
+-- CALLBACKS --
+
 system["input_pressed"] = function(self, input)
     for _, entity in ipairs(self.pool) do
-        add_to_buffer(entity, input, "pressed")
+        local buffer = entity % rh.component.input_buffer
+        add_to_buffer(buffer, input, "pressed")
     end
 end
 
 system["input_released"] = function(self, input)
     for _, entity in ipairs(self.pool) do
-        add_to_buffer(entity, input, "released")
+        local buffer = entity % rh.component.input_buffer
+        add_to_buffer(buffer, input, "released")
     end
 end
 
---
-
--- APIs
-
-function system.clear_buffer(entity)
-    local buffer = entity:ensure(rh.component.input_buffer)
-
-    for _, input_event in ipairs(buffer) do
-        add_to_history(input_event, entity:ensure(input_history))
+system["update"] = function(self, dt)
+    for _, entity in ipairs(self.pool) do
+        local buffer = entity % rh.component.input_buffer
+        update_buffer(buffer, dt)
+        pop(entity, system.MAX_AGE)
     end
-
-    entity:add(rh.component.input_buffer)
-    return system
 end
 
-function system.is_released(entity, input, max_age)
-    max_age = max_age or 0.2
-    -- TODO Add age argument here
-    local buffer = entity:ensure(rh.component.input_buffer)
+----
 
-    for _, input_event in ipairs(buffer) do
-        local is_same = input_event.input == input
-        local is_release = input_event.event == "released"
-        local too_old = input_event.age > max_age
-        if is_same and is_release and not too_old then return true end
-    end
+-- APIS --
 
-    return false
+local peek = {}
+
+system.peek = peek
+
+function peek.is_released(entity, input)
+    local buffer = entity % rh.component.input_buffer
+    local epoch = get_epoch(input, buffer)
+    local event = epoch:find(is_released)
+    if event then return event.age end
 end
 
-function system.is_pressed(entity, inputs, max_age)
+function peek.is_down(entity, input)
+    local buffer = entity % rh.component.input_buffer
+    local history = entity:ensure(input_history)
+
+    local epoch = get_epoch(input, buffer)
+
+    local value = epoch:reduce(history_value, history[input] or 0)
+
+    return value > 0
+end
+
+function peek.is_pressed(entity, inputs)
+    -- Convert to list if just a string
     if type(inputs) == "string" then inputs = {inputs} end
 
-    -- TODO refactor to just handle single input for now.
-    -- Multi input can be implemented later.
-    max_age = max_age or 0.2
-
-    local history = entity:ensure(input_history)
+    -- Get input data structures
     local buffer = entity % rh.component.input_buffer
+    -- Copy history, since we need to mutate it
+    local history = input_history(entity:ensure(input_history))
 
-    local down_history = {}
+    -- First find all pressed events for all inputs
+    local input_epochs = List.map(inputs, get_epoch, buffer)
+        -- Flatten the list
+        :reduce(add, list())
+        -- And sort by age (descresing)
+        :sort(function(a, b) return a.age > b.age end)
 
-    for _, input in ipairs(inputs) do
-        down_history[input] = history[input] or 0
-    end
-
-    local function is_valid()
-        for _, value in pairs(down_history) do
-            if value <= 0 then return false end
+    -- Lambda for checking whehter all inputs are pressed
+    local function all_down()
+        for _, input in ipairs(inputs) do
+            if (history[input] or 0) <= 0 then return false end
         end
 
         return true
     end
 
-    local function pass(input_event)
-        local value = down_history[input_event.input]
-        if not value then return end
-
-        if input_event.event == "pressed" then
-            down_history[input_event.input] = value + 1
-
-            if input_event.age <= max_age then
-                return is_valid()
-            end
-        elseif input_event.event == "released" then
-            down_history[input_event.input] = value - 1
-        end
+    -- Now we roll through all the events
+    for _, event in ipairs(input_epochs) do
+        -- Update the histrory
+        add_to_history(history, event.input, event)
+        -- If the event was a press and all buttons are down we have a yes!
+        -- Return the events age, as it is considered when the event happened
+        if is_pressed(event) and all_down() then return event.age end
     end
-
-    for _, input_event in ipairs(buffer) do
-        if pass(input_event) then return true end
-    end
-
-    return false
 end
 
-function system.is_down(entity, input)
-    local history = entity:ensure(input_history)
-    local buffer = entity % rh.component.input_buffer
+-- Redeclare pop versions of the peek functions
 
-    local value = history[input] or 0
+local function pop_after_peek(func, entity, ...)
+    local max_age = func(entity, ...)
+    if not max_age then return end
+    pop(entity, max_age)
+    return max_age
+end
 
-    for _, input_event in ipairs(buffer) do
-        if input_event.input == input then
-            if input_event.event == "pressed" then
-                value = value + 1
-            elseif input_event.event == "released" then
-                value = value - 1
-            end
-        end
+for _, key in pairs{"is_pressed", "is_released"} do
+    local func = peek[key]
+    system[key] = function(entity, ...)
+        return pop_after_peek(func, entity, ...)
     end
-
-    return value > 0
 end
 
 return system

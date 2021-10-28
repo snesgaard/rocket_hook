@@ -75,6 +75,21 @@ function idle.input(entity)
     end
 end
 
+function idle.input(entity)
+    local input = rh.system.input_buffer
+    local can_jump = entity % rh.component.can_jump
+    local on_ground = rh.system.collision_response.is_on_ground(entity)
+    local charge_index = List.argfind(hooks, function(t) return t:done() end)
+
+    if charge_index and input.is_pressed(entity, "hook") then
+
+    elseif can_jump and input.is_pressed(entity, "jump") then
+
+    elseif on_ground and input.is_pressed(entity, "throw") then
+
+    end
+end
+
 function idle.update(entity, dt)
     local v = entity:ensure(nw.component.velocity)
 
