@@ -148,6 +148,9 @@ end
 
 function scene.keypressed(key, ...)
     world("keypressed", key, ...)
+    if key == "f1" then
+        print("Entities =", #world.__entities)
+    end
 end
 
 function scene.keyreleased(key, ...)

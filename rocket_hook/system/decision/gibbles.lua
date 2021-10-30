@@ -21,6 +21,40 @@ local function get_input_direction()
     return dir
 end
 
+local function get_aim_direction()
+    local dir_from_input = {
+        aim_up = vec2(0, -1),
+        aim_down = vec2(0, 1),
+        aim_left = vec2(-1, 0),
+        aim_right = vec2(1, 0)
+    }
+
+    local dir = vec2()
+
+    for input, d in pairs(dir_from_input) do
+        if rh.system.input_remap.is_down(input) then
+            dir = dir + d
+        end
+    end
+
+    return dir
+end
+
+local function get_delayed_rocket_input(entity)
+    local input = rh.system.input_buffer
+
+    if input.is_pressed(entity, "aim_up_right", input_delay) then
+        return vec2(1, -1)
+    elseif input.is_pressed(entity, "aim_up_left", input_delay) then
+        return vec2(-1, -1)
+    elseif input.is_pressed(entity, "aim_up", input_delay) then
+        return vec2(0, -1)
+    elseif input.is_pressed(entity, "aim_right", input_delay) then
+        return vec2(1, 0)
+    elseif input.is_pressed(entity, "aim_left", input_delay) then
+        return vec2(-1, 0)
+    end
+end
 
 local idle = {}
 
@@ -32,11 +66,23 @@ function idle.input(entity)
     local on_ground = rh.system.collision_response.is_on_ground(entity)
     local charge_index = List.argfind(hooks, function(t) return t:done() end)
 
-    if charge_index and input.is_pressed(entity, "hook") then
-        hooks[charge_index]:reset()
-        entity[rh.component.can_jump] = true
-        rh.system.collision_response.clear_ground(entity)
-        rh.system.action.hook.hook(entity, get_input_direction())
+
+    if charge_index then
+        local hook_dir =  get_delayed_rocket_input(entity)
+        if hook_dir then
+            hooks[charge_index]:reset()
+            entity[rh.component.can_jump] = true
+            rh.system.collision_response.clear_ground(entity)
+            rh.system.action.hook.hook(entity, hook_dir)
+        elseif input.is_pressed(entity, "hook") then
+            hooks[charge_index]:reset()
+            entity[rh.component.can_jump] = true
+            rh.system.collision_response.clear_ground(entity)
+            rh.system.action.hook.hook(entity, get_input_direction())
+        end
+    end
+    if charge_index and input.is_pressed(entity, "hook_aim") then
+        entity:update(nw.component.action, "hook_aim")
     elseif can_jump and input.is_pressed(entity, "jump") then
         entity[rh.component.can_jump] = false
         rh.system.collision_response.clear_ground(entity)
@@ -74,7 +120,58 @@ function idle.update(entity, dt)
     end
 end
 
-local states = {idle = idle}
+
+local hook_aim = {}
+
+function hook_aim.input(entity)
+    local input = rh.system.input_buffer
+    local can_jump = entity % rh.component.can_jump
+    local hooks = entity % rh.component.hook_charges
+
+    local on_ground = rh.system.collision_response.is_on_ground(entity)
+
+    if input.is_released(entity, "hook_aim") then
+
+        local charge_index = List.argfind(hooks, function(t) return t:done() end)
+        if charge_index then
+            hooks[charge_index]:reset()
+            entity[rh.component.can_jump] = true
+            rh.system.collision_response.clear_ground(entity)
+            rh.system.action.hook.hook(entity, get_input_direction())
+        else
+            entity:update(nw.component.action, "idle")
+        end
+
+    elseif can_jump and input.is_pressed(entity, "jump") then
+        entity[rh.component.can_jump] = false
+        rh.system.collision_response.clear_ground(entity)
+        rh.system.action.dodge.dodge(entity, get_input_direction())
+    end
+end
+
+function hook_aim.update(entity, dt)
+    local dir = get_input_direction()
+
+    if dir.x < 0 then
+        entity[nw.component.mirror] = true
+    elseif dir.x > 0 then
+        entity[nw.component.mirror] = false
+    end
+
+    local anime = rh.system.action.hook.constants.hook_animation_from_direction(
+        dir
+    )
+    nw.system.animation.play(entity, anime)
+end
+
+function hook_aim.draw(entity)
+    local dir = get_input_direction()
+    local pos = rh.system.action.hook.hook_goes_where(entity, dir)
+    gfx.setColor(1, 1, 1)
+    gfx.circle("fill", pos.x, pos.y, 5)
+end
+
+local states = {idle = idle, hook_aim=hook_aim}
 
 local function get_state_func(states, action, func_key)
     local a = states[action]
@@ -101,7 +198,7 @@ end
 
 function system:input_buffer_update(entity)
     if not self.pool[entity] then return end
-    handle_input(entity)
+    --handle_input(entity)
 end
 
 function system:update(dt)

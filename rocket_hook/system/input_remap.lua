@@ -14,12 +14,18 @@ end
 
 local input_from_key = {
     lshift = "hook",
+    lctrl = "hook_aim",
     space = "jump",
     left = "left",
     right = "right",
     up = "up",
     down = "down",
-    a = "throw"
+    w = "aim_up",
+    s = "aim_down",
+    d = "aim_right",
+    a = "aim_left",
+    e = "aim_up_right",
+    q = "aim_up_left"
 }
 
 local keys_from_input = reflect_input_map(input_from_key)

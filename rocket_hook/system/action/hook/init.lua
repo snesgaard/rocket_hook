@@ -21,18 +21,23 @@ system.visuals = visuals
 
 system.constants = constants
 
+function system.sanitize_dir(entity, dir)
+    dir = vec2(dir.x, math.min(dir.y, 0))
+    if dir:length() < 1e-10 then
+        dir = vec2(entity[nw.component.mirror] and -1 or 1, 0)
+    end
+    return dir
+end
+
 function system.hook_goes_where(entity, dir)
+    dir = system.sanitize_dir(entity, dir)
     local hc = hook_component.hook(entity, dir)
     local p = hc[nw.component.position] + dir:normalize() * constants.hook_distance
     return p
 end
 
 function system.hook(entity, dir)
-    dir = vec2(dir.x, math.min(dir.y, 0))
-    if dir:length() < 1e-10 then
-        dir = vec2(entity[nw.component.mirror] and -1 or 1, 0)
-    end
-    entity:update(nw.component.action, "hook", dir)
+    entity:update(nw.component.action, "hook", system.sanitize_dir(entity, dir))
     system.init_hook(entity)
 end
 

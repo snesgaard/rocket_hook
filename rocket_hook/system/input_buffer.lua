@@ -132,7 +132,7 @@ function peek.is_down(entity, input)
     return value > 0
 end
 
-function peek.is_pressed(entity, inputs)
+function peek.is_pressed(entity, inputs, filter)
     -- Convert to list if just a string
     if type(inputs) == "string" then inputs = {inputs} end
 
@@ -163,7 +163,9 @@ function peek.is_pressed(entity, inputs)
         add_to_history(history, event.input, event)
         -- If the event was a press and all buttons are down we have a yes!
         -- Return the events age, as it is considered when the event happened
-        if is_pressed(event) and all_down() then return event.age end
+        local valid = true
+        if filter then valid = filter(event) end
+        if valid and is_pressed(event) and all_down() then return event.age end
     end
 end
 
