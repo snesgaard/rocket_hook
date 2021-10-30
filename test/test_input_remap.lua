@@ -28,5 +28,4 @@ T("input_remap", function(T)
             )
         end
     end)
-
 end)
