@@ -86,6 +86,7 @@ system["input_pressed"] = function(self, input)
     for _, entity in ipairs(self.pool) do
         local buffer = entity % rh.component.input_buffer
         add_to_buffer(buffer, input, "pressed")
+        self.world("input_buffer_update", entity, input, "pressed")
     end
 end
 
@@ -93,6 +94,7 @@ system["input_released"] = function(self, input)
     for _, entity in ipairs(self.pool) do
         local buffer = entity % rh.component.input_buffer
         add_to_buffer(buffer, input, "released")
+        self.world("input_buffer_update", entity, input, "released")
     end
 end
 

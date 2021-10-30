@@ -24,69 +24,26 @@ end
 
 local idle = {}
 
-function idle.input_pressed(entity, input)
-    local h = entity[rh.component.hook_charges]
-    local charge_index = List.argfind(h, function(t) return t:done() end)
+function idle.input(entity)
+    local input = rh.system.input_buffer
+    local can_jump = entity % rh.component.can_jump
+    local hooks = entity % rh.component.hook_charges
 
-    if input == "hook" and charge_index then
-        h[charge_index]:reset()
-        entity[rh.component.can_jump] = true
-        rh.system.collision_response.clear_ground(entity)
-        rh.system.action.hook.hook(entity, get_input_direction())
-        return true
-    elseif input == "jump" and entity[rh.component.can_jump] then
+    local on_ground = rh.system.collision_response.is_on_ground(entity)
+    local charge_index = List.argfind(hooks, function(t) return t:done() end)
+
+    if charge_index and input.is_pressed(entity, "hook") then
+        --hooks[charge_index]:reset()
+        --entity[rh.component.can_jump] = true
+        --rh.system.collision_response.clear_ground(entity)
+        --rh.system.action.hook.hook(entity, get_input_direction())
+        entity:update(nw.component.action, "hook_aim")
+    elseif can_jump and input.is_pressed(entity, "jump") then
         entity[rh.component.can_jump] = false
         rh.system.collision_response.clear_ground(entity)
         rh.system.action.dodge.dodge(entity, get_input_direction())
-        return true
-    elseif input == "throw" then
+    elseif on_ground and input.is_pressed(entity, "throw") then
         rh.system.action.throw.throw(entity, get_input_direction())
-        return true
-    end
-end
-
-function idle.input(entity, input_buffer)
-    local hooks = entity % rh.component.hook_charges
-    local can_jump = entity % rh.component.can_jump
-    local on_ground = rh.system.collision_response.is_on_ground(entity)
-    local charge_index = List.argfind(hooks, function(t) return t:done() end)
-
-    if charge_index and input_buffer:is_pressed("hook") then
-
-    elseif can_jump and input_buffer:is_pressed("jump") then
-
-    elseif on_ground and input_buffer:is_pressed("throw") then
-
-    end
-end
-
-function idle.input(entity)
-    local input = rh.system.input_buffer
-    local can_jump = entity % rh.component.can_jump
-    local on_ground = rh.system.collision_response.is_on_ground(entity)
-    local charge_index = List.argfind(hooks, function(t) return t:done() end)
-
-    if charge_index and input.is_pressed(entity, "hook") then
-
-    elseif can_jump and input.is_pressed(entity, "jump") then
-
-    elseif on_ground and input.is_pressed(entity, "throw") then
-
-    end
-end
-
-function idle.input(entity)
-    local input = rh.system.input_buffer
-    local can_jump = entity % rh.component.can_jump
-    local on_ground = rh.system.collision_response.is_on_ground(entity)
-    local charge_index = List.argfind(hooks, function(t) return t:done() end)
-
-    if charge_index and input.is_pressed(entity, "hook") then
-
-    elseif can_jump and input.is_pressed(entity, "jump") then
-
-    elseif on_ground and input.is_pressed(entity, "throw") then
-
     end
 end
 
@@ -120,12 +77,47 @@ end
 
 local hook_aim = {}
 
-function hook_aim.input_pressed(entity, input)
+function hook_aim.input(entity, input)
+    local input = rh.system.input_buffer
 
+    if input.is_released(entity, "hook") then
+        local hooks = entity % rh.component.hook_charges
+        local charge_index = List.argfind(
+            hooks, function(t) return t:done() end
+        )
+        if not charge_index then
+            entity:update(nw.component.action, "idle")
+        else
+            hooks[charge_index]:reset()
+            entity[rh.component.can_jump] = true
+            rh.system.collision_response.clear_ground(entity)
+            rh.system.action.hook.hook(entity, get_input_direction())
+        end
+    end
 end
 
-function hook_aim.input_released(entity, input)
+function hook_aim.update(entity, dt)
+    local dir = get_input_direction()
 
+    if dir.x < 0 then
+        entity[nw.component.mirror] = true
+    elseif dir.x > 0 then
+        entity[nw.component.mirror] = false
+    end
+
+    nw.system.animation.play(
+        entity,
+        rh.system.action.hook.constants.hook_animation_from_direction(dir)
+    )
+end
+
+function hook_aim.draw(entity)
+    local dir = get_input_direction()
+
+    local p = rh.system.action.hook.hook_goes_where(entity, dir)
+
+    gfx.setColor(1, 1, 1)
+    gfx.circle("fill", p.x, p.y, 6)
 end
 
 local states = {
@@ -144,28 +136,11 @@ local system = nw.ecs.system(
     rh.component.can_jump, rh.component.input_buffer
 )
 
-local function handle_input(input, entity)
-    local f = get_state_func(
-        states, (entity % nw.component.action):type(), "input_pressed"
-    )
-    if f then return f(entity, input) end
+local function handle_input(entity)
+    local action = entity % nw.component.action
+    local f = get_state_func(states, action:type(), "input")
+    if f then return f(entity) end
 end
-
-
-function system:input_pressed(input)
-    for _, entity in ipairs(self.pool) do
-        if not handle_input(input, entity) then
-            local buffer = entity[rh.component.input_buffer]
-            buffer:add(input)
-        end
-    end
-end
-
-
-function system:input_released(key)
-
-end
-
 
 function system:on_ground_collision(entity)
     if not self.pool[entity] then return end
@@ -173,8 +148,14 @@ function system:on_ground_collision(entity)
     entity[rh.component.can_jump] = true
 end
 
+function system:input_buffer_update(entity)
+    if not self.pool[entity] then return end
+    handle_input(entity)
+end
 
 function system:update(dt)
+    List.foreach(self.pool, handle_input)
+
     List.foreach(self.pool, function(entity)
         local f = get_state_func(
             states, (entity % nw.component.action):type(), "update"
@@ -189,12 +170,14 @@ function system:update(dt)
             if not t:done() then t:update(dt) end
         end
     end)
+end
 
-    List.foreach(self.pool, function(entity)
-        local buffer = entity[rh.component.input_buffer]
-        buffer:update(dt)
-        buffer:foreach(handle_input, entity)
-    end)
+function system:draw(...)
+    for _, entity in ipairs(self.pool) do
+        local action = entity % nw.component.action
+        local f = get_state_func(states, action:type(), "draw")
+        if f then f(entity, ...) end
+    end
 end
 
 local icon = get_atlas("art/characters"):get_frame("rocket_icon")

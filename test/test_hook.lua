@@ -1,5 +1,5 @@
 T("hook", function(T)
-    local constants = rh.system.action.hook.constants()
+    local constants = rh.system.action.hook.constants
     local total_time = constants.player_time + constants.hook_time
 
     local world = nw.ecs.world{rh.system.action.hook}
