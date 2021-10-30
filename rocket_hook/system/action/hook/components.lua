@@ -25,8 +25,8 @@ end
 
 function hook_component.initial_position(pos) return vec2(pos:unpack()) end
 
-function hook_component.hook(parent, dir)
-    local entity = nw.ecs.entity(parent.world)
+function hook_component.hook(parent, dir, world)
+    local entity = nw.ecs.entity(world)
 
     local animation_key = constants.hook_animation_from_direction(dir)
     local offset_slice = nw.system.animation.get_base_slice(

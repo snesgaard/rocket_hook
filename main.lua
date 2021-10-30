@@ -28,6 +28,10 @@ function love.keypressed(key, ...)
     if key == "escape" then love.event.quit() end
 end
 
+function love.keyreleased(key, ...)
+    if scene.keyreleased then scene.keyreleased(key, ...) end
+end
+
 function love.draw()
     if scene.draw then scene.draw() end
 end

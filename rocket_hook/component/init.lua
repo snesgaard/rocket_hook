@@ -51,6 +51,8 @@ function components.patrol(path, speed)
     }
 end
 
+function components.input_buffer() return {} end
+
 local BASE = ...
 
 function components.__index(t, k) return require(BASE .. "." .. k) end

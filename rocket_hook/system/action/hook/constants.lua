@@ -9,9 +9,9 @@ local constants = {
 constants.player_drag_speed = constants.hook_distance / constants.player_time
 
 function constants.hook_animation_from_direction(dir)
-    if dir.x ~= 0 and dir.y ~= 0 then
+    if dir.x ~= 0 and dir.y < 0 then
         return "hook_hv_fire"
-    elseif dir.y ~= 0 then
+    elseif dir.y < 0 then
         return "hook_v_fire"
     else
         return "hook_h_fire"

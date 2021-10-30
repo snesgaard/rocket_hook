@@ -10,6 +10,7 @@ local logic_systems = list(
 
 local action_systems = list(
     rh.system.input_remap,
+    rh.system.input_buffer,
     rh.system.action.dodge,
     rh.system.action.throw,
     rh.system.action.hook

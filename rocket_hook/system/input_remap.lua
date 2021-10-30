@@ -57,7 +57,6 @@ end
 
 function player_input:keyreleased(key)
     local input = input_from_key[key]
-
     if input then
         self.world("input_released", input)
     end

@@ -1,10 +1,6 @@
 local rh = require "rocket_hook"
 local nw = require "nodeworks"
 
-local system = nw.ecs.system(
-    rh.component.player_control, nw.component.action, nw.component.hook_charges,
-    rh.component.can_jump, rh.component.input_buffer
-)
 
 local function get_input_direction()
     local dir_from_input = {
@@ -26,51 +22,76 @@ local function get_input_direction()
 end
 
 
-local input_pressed_handlers = {}
+local idle = {}
 
+function idle.input(entity)
+    local input = rh.system.input_buffer
+    local can_jump = entity % rh.component.can_jump
+    local hooks = entity % rh.component.hook_charges
 
-function input_pressed_handlers.idle(entity, input)
-    local h = entity[rh.component.hook_charges]
-    local charge_index = List.argfind(h, function(t) return t:done() end)
+    local on_ground = rh.system.collision_response.is_on_ground(entity)
+    local charge_index = List.argfind(hooks, function(t) return t:done() end)
 
-    if input == "hook" and charge_index then
-        h[charge_index]:reset()
+    if charge_index and input.is_pressed(entity, "hook") then
+        hooks[charge_index]:reset()
         entity[rh.component.can_jump] = true
         rh.system.collision_response.clear_ground(entity)
         rh.system.action.hook.hook(entity, get_input_direction())
-        return true
-    elseif input == "jump" and entity[rh.component.can_jump] then
+    elseif can_jump and input.is_pressed(entity, "jump") then
         entity[rh.component.can_jump] = false
         rh.system.collision_response.clear_ground(entity)
         rh.system.action.dodge.dodge(entity, get_input_direction())
-        return true
-    elseif input == "throw" then
+    elseif on_ground and input.is_pressed(entity, "throw") then
         rh.system.action.throw.throw(entity, get_input_direction())
-        return true
     end
 end
 
+function idle.update(entity, dt)
+    local v = entity:ensure(nw.component.velocity)
 
-local function handle_input(input, entity)
-    local action = entity[nw.component.action]:type()
-    local f = input_pressed_handlers[action]
-    if f then return f(entity, input) end
-end
+    if rh.system.collision_response.is_on_ground(entity) then
+        local dir = get_input_direction()
+        local speed = 200 * dir.x
+        entity:update(nw.component.velocity, speed, v.y)
 
+        if dir.x < 0 then
+            entity:update(nw.component.mirror, true)
+        elseif dir.x > 0 then
+            entity:update(nw.component.mirror, false)
+        end
 
-function system:input_pressed(input)
-    for _, entity in ipairs(self.pool) do
-        if not handle_input(input, entity) then
-            local buffer = entity[rh.component.input_buffer]
-            buffer:add(input)
+        if speed == 0 then
+            nw.system.animation.play(entity, "idle")
+        else
+            nw.system.animation.play(entity, "run")
+        end
+    else
+        if v.y < 0 then
+            nw.system.animation.play(entity, "ascend")
+        else
+            nw.system.animation.play(entity, "descend")
         end
     end
 end
 
+local states = {idle = idle}
 
-function system:input_released(key)
+local function get_state_func(states, action, func_key)
+    local a = states[action]
+    if not a then return end
+    return a[func_key]
 end
 
+local system = nw.ecs.system(
+    rh.component.player_control, nw.component.action, nw.component.hook_charges,
+    rh.component.can_jump, rh.component.input_buffer
+)
+
+local function handle_input(entity)
+    local action = entity % nw.component.action
+    local f = get_state_func(states, action:type(), "input")
+    if f then return f(entity) end
+end
 
 function system:on_ground_collision(entity)
     if not self.pool[entity] then return end
@@ -78,37 +99,19 @@ function system:on_ground_collision(entity)
     entity[rh.component.can_jump] = true
 end
 
+function system:input_buffer_update(entity)
+    if not self.pool[entity] then return end
+    handle_input(entity)
+end
 
 function system:update(dt)
+    List.foreach(self.pool, handle_input)
+
     List.foreach(self.pool, function(entity)
-        if entity[nw.component.action]:type() ~= "idle" then return end
-
-        local v = entity:ensure(nw.component.velocity)
-
-
-        if rh.system.collision_response.is_on_ground(entity) then
-            local dir = get_input_direction()
-            local speed = 200 * dir.x
-            entity:update(nw.component.velocity, speed, v.y)
-
-            if dir.x < 0 then
-                entity:update(nw.component.mirror, true)
-            elseif dir.x > 0 then
-                entity:update(nw.component.mirror, false)
-            end
-
-            if speed == 0 then
-                nw.system.animation.play(entity, "idle")
-            else
-                nw.system.animation.play(entity, "run")
-            end
-        else
-            if v.y < 0 then
-                nw.system.animation.play(entity, "ascend")
-            else
-                nw.system.animation.play(entity, "descend")
-            end
-        end
+        local f = get_state_func(
+            states, (entity % nw.component.action):type(), "update"
+        )
+        if f then f(entity, dt) end
     end)
 
     List.foreach(self.pool, function(entity)
@@ -118,12 +121,14 @@ function system:update(dt)
             if not t:done() then t:update(dt) end
         end
     end)
+end
 
-    List.foreach(self.pool, function(entity)
-        local buffer = entity[rh.component.input_buffer]
-        buffer:update(dt)
-        buffer:foreach(handle_input, entity)
-    end)
+function system:draw(...)
+    for _, entity in ipairs(self.pool) do
+        local action = entity % nw.component.action
+        local f = get_state_func(states, action:type(), "draw")
+        if f then f(entity, ...) end
+    end
 end
 
 local icon = get_atlas("art/characters"):get_frame("rocket_icon")

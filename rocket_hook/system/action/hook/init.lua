@@ -17,7 +17,15 @@ local system = nw.ecs.system.from_function(
     end
 )
 
-function system.constants() return constants end
+system.visuals = visuals
+
+system.constants = constants
+
+function system.hook_goes_where(entity, dir)
+    local hc = hook_component.hook(entity, dir)
+    local p = hc[nw.component.position] + dir:normalize() * constants.hook_distance
+    return p
+end
 
 function system.hook(entity, dir)
     dir = vec2(dir.x, math.min(dir.y, 0))
@@ -67,7 +75,7 @@ function system.init_hook(entity)
         entity:update(nw.component.mirror, true)
     end
 
-    entity:add(hook_component.hook, entity, dir)
+    entity:add(hook_component.hook, entity, dir, entity.world)
 
     -- Initialize animation
     local animation_key = constants.hook_animation_from_direction(dir)
