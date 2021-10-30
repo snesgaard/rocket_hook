@@ -25,7 +25,11 @@ local input_from_key = {
     d = "aim_right",
     a = "aim_left",
     e = "aim_up_right",
-    q = "aim_up_left"
+    q = "aim_up_left",
+    kp8 = "up",
+    kp6 = "right",
+    kp4 = "left",
+    kp2 = "down"
 }
 
 local keys_from_input = reflect_input_map(input_from_key)

@@ -1,4 +1,5 @@
 local nw = require "nodeworks"
+
 gfx.setDefaultFilter("nearest", "nearest")
 
 local function load_scene(args)
@@ -24,6 +25,7 @@ function love.update(dt)
 end
 
 function love.keypressed(key, ...)
+    print("keypressed", key)
     if scene.keypressed then scene.keypressed(key, ...) end
     if key == "escape" then love.event.quit() end
 end

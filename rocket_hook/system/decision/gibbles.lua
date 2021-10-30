@@ -95,16 +95,19 @@ end
 function idle.update(entity, dt)
     local v = entity:ensure(nw.component.velocity)
 
-    if rh.system.collision_response.is_on_ground(entity) then
-        local dir = get_input_direction()
-        local speed = 200 * dir.x
+    local dir = get_input_direction()
+    local speed = 200 * dir.x
+    if dir.x ~= 0 then
         entity:update(nw.component.velocity, speed, v.y)
+    end
 
-        if dir.x < 0 then
-            entity:update(nw.component.mirror, true)
-        elseif dir.x > 0 then
-            entity:update(nw.component.mirror, false)
-        end
+    if dir.x < 0 then
+        entity:update(nw.component.mirror, true)
+    elseif dir.x > 0 then
+        entity:update(nw.component.mirror, false)
+    end
+
+    if rh.system.collision_response.is_on_ground(entity) then
 
         if speed == 0 then
             nw.system.animation.play(entity, "idle")
@@ -213,7 +216,7 @@ function system:update(dt)
 
     List.foreach(self.pool, function(entity)
         local h = entity[rh.component.hook_charges]
-        if not rh.system.collision_response.is_on_ground(entity) then return end
+        --if not rh.system.collision_response.is_on_ground(entity) then return end
         for _, t in ipairs(h) do
             if not t:done() then t:update(dt) end
         end
