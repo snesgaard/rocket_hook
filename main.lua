@@ -1,4 +1,5 @@
 local nw = require "nodeworks"
+
 gfx.setDefaultFilter("nearest", "nearest")
 
 local function load_scene(args)
@@ -30,6 +31,18 @@ end
 
 function love.keyreleased(key, ...)
     if scene.keyreleased then scene.keyreleased(key, ...) end
+end
+
+function love.gamepadpressed(joystick, button)
+    if scene.gamepadpressed then scene.gamepadpressed(joystick, button) end
+end
+
+function love.gamepadreleased(joystick, button)
+    if scene.gamepadreleased then scene.gamepadreleased(joystick, button) end
+end
+
+function love.gamepadaxis(joystick, axis, value)
+    if scene.gamepadaxis then scene.gamepadaxis(joystick, axis, value) end
 end
 
 function love.draw()

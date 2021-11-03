@@ -154,4 +154,16 @@ function scene.keyreleased(key, ...)
     world("keyreleased", key, ...)
 end
 
+function scene.gamepadpressed(...)
+    world("gamepadpressed", ...)
+end
+
+function scene.gamepadreleased(...)
+    world("gamepadreleased", ...)
+end
+
+function scene.gamepadaxis(...)
+    world("gamepadaxis", ...)
+end
+
 return scene

@@ -19,7 +19,10 @@ local input_from_key = {
     right = "right",
     up = "up",
     down = "down",
-    a = "throw"
+    a = "throw",
+    lalt = "jump",
+    z = "jump"
+
 }
 
 local keys_from_input = reflect_input_map(input_from_key)
@@ -62,11 +65,85 @@ function player_input:keyreleased(key)
     end
 end
 
+local function less(threshold, value) return value < threshold end
+local function greater(threshold, value) return threshold < value end
+local general_threshold = 0.3
+
+local axis_remap = {
+    {"leftx", "right", greater, general_threshold},
+    {"leftx", "left", less, -general_threshold},
+    {"lefty", "up", less, -general_threshold},
+    {"lefty", "down", greater, general_threshold},
+    {"rightx", "aim_right", greater, general_threshold},
+    {"rightx", "aim_left", less, -general_threshold},
+    {"righty", "aim_up", less, -general_threshold},
+    {"righty", "aim_down", greater, general_threshold}
+}
+
+local function axis_active(axis, cmp, threshold)
+    local joysticks = love.joystick.getJoysticks()
+
+    for _, j in ipairs(joysticks) do
+        if cmp(threshold, j:getGamepadAxis(axis)) then return true end
+    end
+
+    return false
+end
+
+local gamepad_button_remap = {
+    a = "jump",
+    rightshoulder = "hook",
+    x = "throw"
+}
+
+local function gamepad_isdown(key)
+    local joysticks = love.joystick.getJoysticks()
+
+    for _, j in ipairs(joysticks) do
+        if j:isGamepadDown(key) then return true end
+    end
+
+    return false
+end
+
+function player_input:gamepadpressed(joystick, key)
+    local input = gamepad_button_remap[key]
+
+    if input then
+        self.world("input_pressed", input)
+    end
+end
+
+function player_input:gamepadreleased(joystick, key)
+    local input = gamepad_button_remap[key]
+
+    if input then
+        self.world("input_released", input)
+    end
+end
+
+function player_input:gamepadaxis(joystick, axis, value)
+
+end
+
 function player_input.is_down(input)
     local is_down = false
 
     for _, key in ipairs(keys_from_input[input] or {}) do
         is_down = is_down or love.keyboard.isDown(key)
+    end
+
+    for _, ar in ipairs(axis_remap) do
+        local axis, axis_to_input, cmp, t = unpack(ar)
+        if axis_to_input == input then
+            is_down = is_down or axis_active(axis, cmp, t)
+        end
+    end
+
+    for gamepad_button, gamepad_input in pairs(gamepad_button_remap) do
+        if gamepad_input == input then
+            is_down = is_down or gamepad_isdown(gamepad_button)
+        end
     end
 
     return is_down
