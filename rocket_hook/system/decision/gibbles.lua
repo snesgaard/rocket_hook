@@ -21,6 +21,25 @@ local function get_input_direction()
     return dir
 end
 
+local function get_aim_direction()
+    local dir_from_input = {
+        aim_up = vec2(0, -1),
+        aim_down = vec2(0, 1),
+        aim_left = vec2(-1, 0),
+        aim_right = vec2(1, 0)
+    }
+
+    local dir = vec2()
+
+    for input, d in pairs(dir_from_input) do
+        if rh.system.input_remap.is_down(input) then
+            dir = dir + d
+        end
+    end
+
+    return dir
+end
+
 
 local idle = {}
 
@@ -48,24 +67,30 @@ end
 
 function idle.update(entity, dt)
     local v = entity:ensure(nw.component.velocity)
+    local dir = get_input_direction()
+    local speed = 200
+
+    if dir.x < 0 then
+        entity:update(nw.component.mirror, true)
+    elseif dir.x > 0 then
+        entity:update(nw.component.mirror, false)
+    end
 
     if rh.system.collision_response.is_on_ground(entity) then
-        local dir = get_input_direction()
-        local speed = 200 * dir.x
-        entity:update(nw.component.velocity, speed, v.y)
+        entity:update(nw.component.velocity, dir.x * speed, v.y)
 
-        if dir.x < 0 then
-            entity:update(nw.component.mirror, true)
-        elseif dir.x > 0 then
-            entity:update(nw.component.mirror, false)
-        end
-
-        if speed == 0 then
+        if dir.x == 0 then
             nw.system.animation.play(entity, "idle")
         else
             nw.system.animation.play(entity, "run")
         end
     else
+        if math.abs(v.x) <= speed then
+            entity:update(nw.component.velocity, dir.x * speed, v.y)
+        elseif v.x * speed * dir.x < 0 then
+            entity:update(nw.component.velocity, v.x * 0.99, v.y)
+        end
+
         if v.y < 0 then
             nw.system.animation.play(entity, "ascend")
         else
@@ -116,9 +141,10 @@ function system:update(dt)
 
     List.foreach(self.pool, function(entity)
         local h = entity[rh.component.hook_charges]
-        if not rh.system.collision_response.is_on_ground(entity) then return end
+        local on_ground = rh.system.collision_response.is_on_ground(entity)
+        local rate = on_ground and 1 or 0.3
         for _, t in ipairs(h) do
-            if not t:done() then t:update(dt) end
+            if not t:done() then t:update(dt * rate) end
         end
     end)
 end

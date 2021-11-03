@@ -4,8 +4,9 @@ local travel_time = 0.2
 local travel_distance = 50
 
 local function player_travel_tween(pos, dir, mirror)
-    local d = vec2(1, -1)
-    if dir.x < 0 or (dir.x == 0 and mirror) then d = vec2(-1, -1) end
+    --local d = vec2(1, -1)
+    --if dir.x < 0 or (dir.x == 0 and mirror) then d = vec2(-1, -1) end
+    local d = vec2(dir.x, -1)
 
 
     return nw.component.tween(pos:copy(), pos + d * travel_distance, travel_time)
