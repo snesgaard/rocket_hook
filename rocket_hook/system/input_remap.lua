@@ -21,8 +21,8 @@ local input_from_key = {
     down = "down",
     a = "throw",
     lalt = "jump",
-    z = "jump"
-
+    z = "jump",
+    d = "punch"
 }
 
 local keys_from_input = reflect_input_map(input_from_key)
