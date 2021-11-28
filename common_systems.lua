@@ -13,7 +13,7 @@ local action_systems = list(
     rh.system.input_buffer,
     rh.system.action.dodge,
     rh.system.action.throw,
-    rh.system.action.hook
+    rh.system.action.hook,
 )
 
 local decision_systems = list(
