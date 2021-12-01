@@ -36,6 +36,7 @@ function tiled.instantiate_tile(map, layer, tile, x, y, world, bump_world)
         :add(nw.component.position, position:unpack())
         :add(nw.component.hitbox, 0, 0, tile.width, tile.height)
 
+
     local should_have_collision = tile.properties.one_way or tile.properties.body
 
     if should_have_collision then
@@ -48,6 +49,21 @@ function tiled.instantiate_tile(map, layer, tile, x, y, world, bump_world)
 
     if tile.properties.body then
         entity:add(nw.component.body)
+    end
+
+    if tile.objectGroup then
+        for _, object in ipairs(tile.objectGroup.objects) do
+            if object.shape == "rectangle" then
+                local obj = nw.ecs.entity(world)
+                    :add(nw.component.position, position:unpack())
+                    :add(nw.component.hitbox,
+                        object.x, object.y, object.width, object.height
+                    )
+                    :add(nw.component.body)
+                    :add(nw.component.bump_world, bump_world)
+                    :add(nw.component.parent, entity)
+            end
+        end
     end
 
     return entity
