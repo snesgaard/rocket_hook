@@ -76,8 +76,8 @@ function visuals.draw_chain_hv(start_pos, end_pos)
     gfx.setStencilTest()
 end
 
-function visuals.create_smoke_puff(world, x, y)
-    return nw.ecs.entity(world)
+function visuals.create_smoke_puff(parent, x, y)
+    return parent:spawn()
         :add(nw.component.sprite)
         :add(nw.component.animation_state)
         :add(

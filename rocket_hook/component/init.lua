@@ -57,4 +57,6 @@ local BASE = ...
 
 function components.__index(t, k) return require(BASE .. "." .. k) end
 
+function components.layer(layer_name) return layer_name end
+
 return setmetatable(components, components)

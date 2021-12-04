@@ -1,22 +1,26 @@
 local nw = require "nodeworks"
+local rh = require "rocket_hook"
 
 local tiled = {}
+
+function tiled.spawn(sti_map, layer)
+    if not layer then
+        error("layer must be specified")
+    end
+    return nw.ecs.entity(sti_map.ecs_world)
+        :add(rh.component.layer, layer.name)
+end
 
 function tiled.load_world(sti_map, tile_load, object_load, world, bump_world)
     world = world or nw.ecs.world()
     bump_world = bump_world or bump.newWorld()
 
-    -- FIrst pass all tile layers, to instantiate the general level geometry
     for _, layer in ipairs(sti_map.layers) do
-        if layer.type == "tilelayer" then
-            layer.ecs = tile_load(sti_map, layer, world, bump_world)
-        end
-    end
-
-    -- Then pass all object layers
-    for _, layer in ipairs(sti_map.layers) do
-        if layer.type == "objectgroup" and object_load then
-            layer.ecs = object_load(sti_map, layer, world, bump_world)
+        local entities = tiled.handle_layer(
+            sti_map, layer, tile_load, object_load, world, bump_world
+        )
+        for _, entity in ipairs(entities or {}) do
+            entity[rh.component.layer] = layer.name
         end
     end
 
@@ -26,82 +30,68 @@ function tiled.load_world(sti_map, tile_load, object_load, world, bump_world)
     return world, bump_world
 end
 
-
-function tiled.instantiate_tile(map, layer, tile, x, y, world, bump_world)
-    local position = vec2(map:convertTileToPixel(x - 1, y - 1))
-        + vec2(layer.offsetx, layer.offsety)
-
-    local name = string.format("tile x = %i, y = %i", x, y)
-    local entity = nw.ecs.entity(world, name)
-        :add(nw.component.position, position:unpack())
-        :add(nw.component.hitbox, 0, 0, tile.width, tile.height)
-
-
-    local should_have_collision = tile.properties.one_way or tile.properties.body
-
-    if should_have_collision then
-        entity:add(nw.component.bump_world, bump_world)
+function tiled.handle_layer(sti_map, layer, tile_load, object_load, world, bump_world)
+    if layer.type == "tilelayer" then
+        return tiled.tile_load(sti_map, layer, tile_load, world, bump_world)
+    elseif layer.type == "objectgroup" then
+        layer.visible = false
+        return tiled.object_load(sti_map, layer, object_load, world, bump_world)
     end
-
-    if tile.properties.one_way then
-        entity:add(nw.component.oneway)
-    end
-
-    if tile.properties.body then
-        entity:add(nw.component.body)
-    end
-
-    if tile.objectGroup then
-        for _, object in ipairs(tile.objectGroup.objects) do
-            if object.shape == "rectangle" then
-                local obj = nw.ecs.entity(world)
-                    :add(nw.component.position, position:unpack())
-                    :add(nw.component.hitbox,
-                        object.x, object.y, object.width, object.height
-                    )
-                    :add(nw.component.body)
-                    :add(nw.component.bump_world, bump_world)
-                    :add(nw.component.parent, entity)
-            end
-        end
-    end
-
-    return entity
 end
 
-local function handle_layer_data(map, layer, world, bump_world)
+function tiled.object_load(sti_map, layer, object_load, world, bump_world)
+    local entities = {}
+
+    for _, object in ipairs(layer.objects) do
+        local entity = object_load(sti_map, layer, object, world, bump_world)
+        if entity then table.insert(entities, entity) end
+    end
+
+    return entities
+end
+
+local function handle_layer_data(map, layer, tile_load, world, bump_world)
     if not layer.data then return end
+
+    local entities = list()
 
     for y, row in ipairs(layer.data) do
         for x, tile in pairs(row) do
-            tiled.instantiate_tile(
-                map, layer, tile, x, y, world, bump_world
-            )
+            local entity = tile_load(map, layer, tile, x, y, world, bump_world)
+            if entity then table.insert(entities, entity) end
         end
     end
+
+    return entities
 end
 
-local function handle_layer_chunks(map, layer, world, bump_world)
+local function handle_layer_chunks(map, layer, tile_load, world, bump_world)
     if not layer.chunks then return end
+
+    local entities = list()
 
     for _, chunk in ipairs(layer.chunks) do
         for y, row in ipairs(chunk.data) do
             for x, tile in pairs(row) do
-                tiled.instantiate_tile(
+                local entity = tile_load(
                     map, layer, tile, x + chunk.x, y + chunk.y, world, bump_world
                 )
+                if entity then table.insert(entities, entity) end
             end
         end
     end
+
+    return entities
 end
 
-function tiled.tile_load(map, layer, world, bump)
-    local ecs_tiles = {}
+function tiled.tile_load(map, layer, tile_load, world, bump)
+    local data_entities = handle_layer_data(map, layer, tile_load, world, bump_world)
+    local chunk_entities = handle_layer_chunks(map, layer, tile_load, world, bump_world)
 
-    handle_layer_data(map, layer, world, bump_world)
-    handle_layer_chunks(map, layer, world, bump_world)
+    if not data_entities then return chunk_entities end
+    if not chunk_entities then return data_entities end
 
-    return ecs_tiles
+    return data_entities + chunk_entities
 end
 
 function tiled.find_object(map, search_function)
@@ -117,6 +107,37 @@ function tiled.find_object(map, search_function)
     end
 
     return objects
+end
+
+function tiled.draw(map, x, y, sx, sy)
+    gfx.setCanvas{map.canvas, stencil=true}
+    gfx.clear()
+    --map:draw(tx, ty, 2, 2)
+    --gfx.scale(2, 2)
+    for _, layer in ipairs(map.layers) do
+        gfx.push()
+        local px, py = x * layer.parallaxx, y * layer.parallaxy
+        gfx.translate(math.floor(px), math.floor(py))
+        if layer.visible then layer:draw() end
+        gfx.pop()
+
+        gfx.push()
+        local function entity_filter(entity)
+            return entity[rh.component.layer] == layer.name
+        end
+        gfx.translate(px, py)
+        world:filter_event(entity_filter, "draw"):spin()
+
+        gfx.pop()
+    end
+
+    gfx.translate(x, y)
+
+
+    gfx.setCanvas()
+    gfx.origin()
+    gfx.scale(sx, sy)
+    gfx.draw(map.canvas, 0, 0)
 end
 
 return tiled
