@@ -176,6 +176,16 @@ function scene.load()
         + {nw.component.velocity, 300, 200}
 
     local position = e % nw.component.position
+
+    water_images = {
+        gfx.newImage("art/background/Layer 1.png"),
+        gfx.newImage("art/background/Layer 2.png"),
+        gfx.newImage("art/background/Layer 3.png"),
+        gfx.newImage("art/background/Layer 4.png"),
+    }
+
+    for _, image in ipairs(water_images) do
+    end
 end
 
 function scene.update(dt)
