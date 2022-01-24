@@ -2,6 +2,7 @@ local nw = require "nodeworks"
 local rh = require "rocket_hook"
 local tiled = require "tiled"
 local common_systems = require "common_systems"
+local parallax_image = require "parallax_image"
 require "lovedebug.lovedebug"
 
 function nw.system.collision.default_move_filter(item, other)
@@ -151,7 +152,7 @@ function scene.load()
         map, function(obj) return obj.type == "player_spawn" end
     )
 
-    local location_name = "platform_debug"
+    local location_name = "spawnA"
     local location = spawn_locations:find(function(obj) return obj.name == location_name end)
 
     if not location then
@@ -177,25 +178,41 @@ function scene.load()
 
     local position = e % nw.component.position
 
-    water_images = {
-        gfx.newImage("art/background/Layer 1.png"),
-        gfx.newImage("art/background/Layer 2.png"),
-        gfx.newImage("art/background/Layer 3.png"),
-        gfx.newImage("art/background/Layer 4.png"),
+
+    water_bgs = {}
+
+    local water_layers = {
+        "bg_far", "bg", "sparkle_far", "sparkle_close", "highlight_close"
     }
 
-    for _, image in ipairs(water_images) do
+    for i, name in ipairs(water_layers) do
+        local path = string.format(
+            "art/background/build/water_perspective.layers/%s.png", name
+        )
+        local water_bg = parallax_image(
+            gfx.newImage(path), 0.1 * (i), 0.015 * (i)
+        )
+        table.insert(water_bgs, water_bg)
     end
+
 end
 
 function scene.update(dt)
-    world("update", dt)
+    if not pause then world("update", dt) end
 end
 
 function scene.draw()
+    gfx.origin()
+    gfx.setColor(color("626c9d"))
+    gfx.rectangle("fill", 0, 0, gfx.getWidth(), gfx.getHeight())
+    gfx.setColor(1, 1, 1)
+
     local tx, ty, sx, sy = rh.system.camera
         .track(map.camera, map.gibbles, camera_bound)
         .translation_scale(map.camera)
+
+    --water_bg:draw(tx, ty, sx, sy)
+    for _, wbg in ipairs(water_bgs) do wbg:draw(tx, ty, sx, sy) end
 
     tiled.draw(map, tx, ty, sx, sy)
     --bump_debug.draw_world(bump_world)
@@ -204,6 +221,7 @@ function scene.draw()
 end
 
 function scene.keypressed(key, ...)
+    if key == "p" then pause = not pause end
     world("keypressed", key, ...)
 end
 
