@@ -57,4 +57,14 @@ local BASE = ...
 
 function components.__index(t, k) return require(BASE .. "." .. k) end
 
+function components.layer(layer_entity) return layer_entity end
+
+function components.layer_group(name, type, priority)
+    return {name=name, priority=priority or 0, type=type}
+end
+
+function components.layer_pool() return nw.ecs.pool() end
+
+
+
 return setmetatable(components, components)

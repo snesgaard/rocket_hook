@@ -85,7 +85,7 @@ function system.init_hook(entity)
     nw.system.animation.play(entity, animation_key)
 
     -- Create the smoke puff visuals
-    local smoke = visuals.create_smoke_puff(entity.world, slice:center():unpack())
+    local smoke = visuals.create_smoke_puff(entity, slice:center():unpack())
     smoke:add(nw.component.mirror, entity[nw.component.mirror])
     nw.system.animation.play(
         smoke, constants.smoke_from_direction(dir),

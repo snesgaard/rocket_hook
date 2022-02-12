@@ -4,9 +4,10 @@ local nw = require "nodeworks"
 local components = rh.assemblage.camera():keys()
 local system = nw.ecs.system(components:unpack())
 
-function system.track(camera_entity, tracked_entity)
+function system.track(camera_entity, tracked_entity, bound)
     local slack = camera_entity[rh.component.camera_slack]
     local pos = camera_entity[nw.component.position]
+    local scale = camera_entity[rh.component.scale]
     local parent_pos = tracked_entity[nw.component.position]
 
     local diff = parent_pos - pos
@@ -24,7 +25,27 @@ function system.track(camera_entity, tracked_entity)
         adjust.y = math.min(adjust.y + slack.y, 0)
     end
 
-    camera_entity:update(nw.component.position, (pos + adjust):unpack())
+    local next_pos = pos + adjust
+
+    if bound then
+        local half_screen = 0.5 * vec2(
+            gfx.getWidth() / scale.x, gfx.getHeight() / scale.y
+        )
+
+        next_pos.x = math.clamp(
+            next_pos.x,
+            bound.x + half_screen.x,
+            bound.x + bound.w - half_screen.x
+        )
+
+        next_pos.y = math.clamp(
+            next_pos.y,
+            bound.y + half_screen.y,
+            bound.y + bound.h - half_screen.y
+        )
+    end
+
+    camera_entity:update(nw.component.position, next_pos:unpack())
 
     return system
 end
