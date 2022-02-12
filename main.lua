@@ -1,10 +1,10 @@
-local nw = require "nodeworks"
+nw = require "nodeworks"
 
 gfx.setDefaultFilter("nearest", "nearest")
 
 function love.load(args)
     local key = args[1]
-    world = nw.ecs.world{}
+    world = nw.ecs.world{nw.system.render}
 
     if not key then return end
 
@@ -39,4 +39,17 @@ function love.gamepadaxis(joystick, axis, value)
 end
 
 function love.draw()
+    world("draw", 0, -0)
+end
+
+function love.mousepressed(x, y, button, isTouch)
+    world("mousepressed", x, y, button, isTouch)
+end
+
+function love.mousereleased(x, y, button, isTouch)
+    world("mousereleased", x, y, button, isTouch)
+end
+
+function love.mousemoved(x, y, dx, dy)
+    world("mousemoved", x, y, dx, dy)
 end
