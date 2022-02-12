@@ -2,49 +2,41 @@ local nw = require "nodeworks"
 
 gfx.setDefaultFilter("nearest", "nearest")
 
-local function load_scene(args)
-    local key = args[1]
-
-    if key == "test" then
-        require("test")
-        print("ALL TEST PASSED")
-        love.event.quit()
-        return
-    end
-
-    return require "scenes.tiled_load"
-end
-
 function love.load(args)
-    scene = load_scene(args) or {}
-    if scene.load then scene.load() end
+    local key = args[1]
+    world = nw.ecs.world{}
+
+    if not key then return end
+
+    printf("Loading scene %s", key)
+    local scene = require(key:gsub("%.lua", ""))
+    world:push(scene)
 end
 
 function love.update(dt)
-    if scene.update then scene.update(dt) end
+    world("update", dt)
 end
 
 function love.keypressed(key, ...)
-    if scene.keypressed then scene.keypressed(key, ...) end
     if key == "escape" then love.event.quit() end
+    world("keypressed", key, ...)
 end
 
 function love.keyreleased(key, ...)
-    if scene.keyreleased then scene.keyreleased(key, ...) end
+    world("keyreleased", key, ...)
 end
 
 function love.gamepadpressed(joystick, button)
-    if scene.gamepadpressed then scene.gamepadpressed(joystick, button) end
+    world("gamepadpressed", joystick, button)
 end
 
 function love.gamepadreleased(joystick, button)
-    if scene.gamepadreleased then scene.gamepadreleased(joystick, button) end
+    world("gamepadreleased", joystick, button)
 end
 
 function love.gamepadaxis(joystick, axis, value)
-    if scene.gamepadaxis then scene.gamepadaxis(joystick, axis, value) end
+    world("gamepadreleased", joystick, button)
 end
 
 function love.draw()
-    if scene.draw then scene.draw() end
 end
