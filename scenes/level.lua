@@ -15,7 +15,7 @@ function level.on_push(ctx)
 
     ctx.camera = ctx:entity()
         :set(nw.component.position, 100, 100)
-        :set(nw.component.scale, 2, 2)
+        :set(nw.component.scale, 3, 3)
 end
 
 level["scene.draw"] = function(ctx)
@@ -29,6 +29,15 @@ function level.mousemoved(ctx, x, y, dx, dy)
     local pos = ctx.camera % nw.component.position
     pos.x = pos.x + dx
     pos.y = pos.y + dy
+end
+
+function level.wheelmoved(ctx, x, y)
+    local scale = ctx.camera % nw.component.scale
+    if y > 0 then
+        ctx.camera[nw.component.scale] = scale * 1.1
+    elseif y < 0 then
+        ctx.camera[nw.component.scale] = scale / 1.1
+    end
 end
 
 return level

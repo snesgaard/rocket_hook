@@ -53,3 +53,7 @@ end
 function love.mousemoved(x, y, dx, dy)
     world("mousemoved", x, y, dx, dy)
 end
+
+function love.wheelmoved(x, y)
+    world("wheelmoved", x, y)
+end
