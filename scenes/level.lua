@@ -13,17 +13,20 @@ function level.on_push(ctx)
         end
     end
 
-    ctx:singleton()
+    ctx.camera = ctx:entity()
         :set(nw.component.position, 100, 100)
         :set(nw.component.scale, 2, 2)
 end
 
-function level.draw(ctx, x, y)
+level["scene.draw"] = function(ctx)
+    local pos = ctx.camera % nw.component.position
+    local scale = ctx.camera % nw.component.scale
+    ctx.world("draw", pos.x, pos.y, scale.x, scale.y)
 end
 
 function level.mousemoved(ctx, x, y, dx, dy)
     if not love.mouse.isDown(3) then return end
-    local pos = ctx:singleton() % nw.component.position
+    local pos = ctx.camera % nw.component.position
     pos.x = pos.x + dx
     pos.y = pos.y + dy
 end

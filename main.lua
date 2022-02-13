@@ -39,7 +39,7 @@ function love.gamepadaxis(joystick, axis, value)
 end
 
 function love.draw()
-    world("draw", 0, -0)
+    world("scene.draw", 0, -0)
 end
 
 function love.mousepressed(x, y, button, isTouch)
