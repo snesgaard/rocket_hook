@@ -4,7 +4,7 @@ gfx.setDefaultFilter("nearest", "nearest")
 
 function love.load(args)
     local key = args[1]
-    world = nw.ecs.world{nw.system.render}
+    world = nw.ecs.world{nw.system.layer, nw.system.render, nw.system.input_buffer}
 
     if not key then return end
 
@@ -18,12 +18,14 @@ function love.update(dt)
 end
 
 function love.keypressed(key, ...)
-    if key == "escape" then love.event.quit() end
+    if key == "backspace" then love.event.quit() end
     world("keypressed", key, ...)
+    world("input_pressed", key)
 end
 
 function love.keyreleased(key, ...)
     world("keyreleased", key, ...)
+    world("input_released", key)
 end
 
 function love.gamepadpressed(joystick, button)
@@ -39,7 +41,7 @@ function love.gamepadaxis(joystick, axis, value)
 end
 
 function love.draw()
-    world("scene.draw", 0, -0)
+    world:reverse_event("draw")
 end
 
 function love.mousepressed(x, y, button, isTouch)
