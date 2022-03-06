@@ -6,7 +6,12 @@ function love.load(args)
     local key = args[1]
     world = nw.ecs.world{nw.system.layer, nw.system.render, nw.system.input_buffer}
 
-    if not key then return end
+    if not key then
+        require "test"
+        print("ALL TEST PASSED")
+        love.event.quit()
+        return
+    end
 
     printf("Loading scene %s", key)
     local scene = require(key:gsub("%.lua", ""))
